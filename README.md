@@ -1,4 +1,6 @@
 # Debiasing-Chest-X-Rays-with-StyleGAN
+We explore how to construct unbiased Chest X-Ray datasets using StyleGAN! 
+
 
 ### Setup
 
