@@ -1,4 +1,6 @@
 # Debiasing-Chest-X-Rays-with-StyleGAN
+
+### Generate intermediate images with linear SVM and StyleGAN
 ```python
 old_w = styles[4]; v = clf.named_steps['linearsvc'].coef_[0].reshape((styles[0].shape))
 alpha = -30
