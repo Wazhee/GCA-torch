@@ -1,4 +1,4 @@
 # Debiasing-Chest-X-Rays-with-StyleGAN
-```python 
+```linux 
 python ../resnet50_cardiomegaly.py
 ```
