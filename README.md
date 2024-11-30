@@ -1,6 +1,11 @@
 # Debiasing-Chest-X-Rays-with-StyleGAN
 We explore how to construct unbiased Chest X-Ray datasets using StyleGAN! 
 
+```Chest X-Ray Interpolation using StyleGAN3 [Link]``` 
+<br>
+![male2female](https://github.com/user-attachments/assets/34a72a22-a4c1-47d9-80ce-0639d8242fc0)
+<img height="250" width="500" alt="m2f" src="https://github.com/user-attachments/assets/a35f516d-b86c-4bb7-a74b-a97c295fcd4d">
+
 
 ### Setup
 
