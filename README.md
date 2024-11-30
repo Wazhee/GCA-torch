@@ -1,5 +1,12 @@
 # Debiasing-Chest-X-Rays-with-StyleGAN
 
+### Training Chest X-Ray Classifiers
+```linux 
+python ../resnet50_cardiomegaly.py
+python ../resnet50_age.py
+python ../resnet50_gender.py
+```
+
 ### Generate intermediate images with linear SVM and StyleGAN
 ```python
 old_w = styles[4]; v = clf.named_steps['linearsvc'].coef_[0].reshape((styles[0].shape))
@@ -14,6 +21,4 @@ for idx in tqdm(range(50)):
     cv2.imwrite(path, img)
     alpha += 1
 ```
-```linux 
-python ../resnet50_cardiomegaly.py
-```
+
