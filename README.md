@@ -1,10 +1,16 @@
 # Debiasing-Chest-X-Rays-with-StyleGAN
 
+### Setup
+
+```
+git clone ""
+```
+
 ### Training Chest X-Ray Classifiers
 ```linux 
-python ../resnet50_cardiomegaly.py
-python ../resnet50_age.py
-python ../resnet50_gender.py
+python ../resnet50_cardiomegaly.py     # disease classification
+python ../resnet50_age.py     # age classification
+python ../resnet50_gender.py     # gender classification
 ```
 
 ### Generate intermediate images with linear SVM and StyleGAN
