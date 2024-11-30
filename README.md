@@ -3,7 +3,8 @@
 ### Setup
 
 ```
-git clone ""
+git clone "https://github.com/Wazhee/Debiasing-Chest-X-Rays-with-StyleGAN.git"
+cd Debiasing-Chest-X-Rays-with-StyleGAN
 ```
 
 ### Training Chest X-Ray Classifiers
