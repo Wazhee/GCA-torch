@@ -23,7 +23,7 @@ from torchvision import models, transforms
 from sklearn.svm import LinearSVC
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
-# from sklearn.datasets import make_classification
+import pandas as pd
 import random
 import matplotlib.pyplot as plt
 
@@ -69,22 +69,22 @@ def xray_is_male(img):
     logits = gender_cnn(im[None,:,:,:])[0,0]
     return (logits < 0.5).detach().cpu().numpy()
 
-def create_pneumonia_dataset(n_patients=1000):
+def create_synthetic_dataset(n_patients=1000):
     # Generate 1000 male and female images
     styles, gender, pneumonia, images = [],[],[],[]
-    n_negative, n_positive = 0,0
-    while((nofind < n_patients) or (pneu < n_patients)):
+    male, female = 0,0
+    while((male < n_patients) or (female < n_patients)):
         z = torch.from_numpy(np.random.randn(1, G.z_dim)).to(device) # get random z vector
         w = convert_z_to_w(z, truncation_psi=0.7, truncation_cutoff=9) # convert to style vector
         img = generate_image_from_style(w) # generate image from w
         gen, pneu = xray_is_male(img), xray_has_pneumonia(img)
-        if pneu and n_positive < n_patients:
+        if xray_is_male(img) and male < n_patients:
             styles.append(w.cpu().detach().numpy()); gender.append('male'); images.append(img)
-            pneumonia.append(1)
-            pneu+=1
-        elif n_negative < n_patients:
+            pneumonia.append(1) if pneu else pneumonia.append(0)
+            male+=1
+        elif female < n_patients:
             styles.append(w.cpu().detach().numpy()); gender.append('female'); images.append(img)
-            pneumonia.append(0) 
+            pneumonia.append(1) if pneu else pneumonia.append(0)
             female+=1
         sys.stdout.write(f"\r# males: {male}, # females: {female}")
         sys.stdout.flush()
@@ -94,7 +94,8 @@ def create_pneumonia_dataset(n_patients=1000):
             "gender": gender,
             "pneumonia": pneumonia,
             "image": images}
-#     data = add_pneumonia(data)
+    
+    print("Finished creating synthetic dataset...")
     print("\n",len(data['style']), len(data['gender']), len(data['pneumonia']), len(data['image']))
     # Create DataFrame
     return pd.DataFrame(data)
@@ -147,7 +148,7 @@ transform = transforms.Compose([
 Construct synthetic dataset
 """
 # load RSNA csv
-rsna_df = pd.read_csv('../datasets/train_rsna.csv')
+rsna_df = pd.read_csv('../../datasets/train_rsna.csv')
 rsna_df = rsna_df.drop_duplicates(subset='patientId', keep="last") # Clean the data
 n_true, n_false = len(rsna_df[rsna_df['Target'] == 1]), len(rsna_df[rsna_df['Target'] == 0])
 n_total = len(rsna_df)
@@ -156,9 +157,7 @@ n_total = len(rsna_df)
 print(round(n_true/n_total * 100, 3), '% Pneumonia')
 print(round(n_false/n_total * 100, 3), '% No Finding')
 
-n_iterations = .25 * len(rsna_df)
-data = add_pneumonia()
-
+df = create_synthetic_dataset() # generate 1000 male & femal chest x-rays
 """
 Train Linear SVM
 """
@@ -169,9 +168,6 @@ for idx in tqdm(range(len(styles))):
     
 clf = make_pipeline(LinearSVC(random_state=0, tol=1e-5))
 clf.fit(wX, genders) # fit SVM to synthetic dataset
-
-
-
 
 fig, rows, columns = plt.figure(figsize=(50, 50)), 10,10
 subject = 807
