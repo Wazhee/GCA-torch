@@ -327,7 +327,7 @@ ITERATIONS = 100
 
 # Embedd entire RSNA dataset
 print("Starting Embedding")
-for i in tqdm(range(len(ref_images))):
+for i in tqdm(range(2362, len(ref_images))):
     PATH_IMAGE = ref_images[i]
     PATH_SAVE = PATH_IMAGE.split('/')[-1].split('.')[0]
     img=lpips.im2tensor(lpips.load_image(PATH_IMAGE))

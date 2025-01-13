@@ -180,7 +180,7 @@ if not os.path.exists(PATH_SAVE):
 embeddings = [os.path.join(PATH2LATENTS, x) for x in os.listdir(PATH2LATENTS)]
 embeddings = list(filter(os.path.isfile, embeddings))
 
-for i in tqdm(range(len(embeddings[:10]))):
+for i in tqdm(range(len(embeddings[ss]))):
     latent_w = np.load(embeddings[i])['100']
     img = generate_image_from_style(torch.from_numpy(latent_w).to('cuda'))
 
@@ -196,7 +196,7 @@ for i in tqdm(range(len(embeddings[:10]))):
             plt.title('Female', fontsize="40")
         else:
             plt.title('Male', fontsize="40")
-        alpha += 10
+        alpha += 12
         
     idx = embeddings[i].split('/')[-1].split('.')[0] # get save path
     plt.savefig(PATH_SAVE + idx + '.png')
