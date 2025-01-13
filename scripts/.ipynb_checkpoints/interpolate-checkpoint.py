@@ -177,7 +177,7 @@ PATH2LATENTS = '../../synthetic_images/latents/'
 embeddings = [os.path.join(PATH2LATENTS, x) for x in os.listdir(PATH2LATENTS)]
 embeddings = list(filter(os.path.isfile, embeddings))
 
-latent_w = np.load(embeddings[0])['100']
+latent_w = np.load(embeddings[10])['100']
 img = generate_image_from_style(torch.from_numpy(latent_w).to('cuda'))
 
 fig, rows, columns = plt.figure(figsize=(50, 50)), 10,10
@@ -185,7 +185,7 @@ subject = 807
 
 old_w = latent_w; v = clf.named_steps['linearsvc'].coef_[0].reshape((styles[0].shape))
 alpha = 0
-for idx in range(5):
+for idx in range(8):
     new_w = old_w + alpha * v
     img = generate_image_from_style(torch.from_numpy(new_w).to('cuda'))
     fig.add_subplot(rows, columns, idx+1); plt.imshow(img,cmap='gray'); plt.axis('off')
@@ -200,7 +200,7 @@ plt.savefig('Figure1.png')
 
 old_w = latent_w ;
 fig, rows, columns = plt.figure(figsize=(50, 50)), 10,10
-alpha = 0
+alpha = -20
 for idx in range(5):
     new_w = old_w + alpha * v
     img = generate_image_from_style(torch.from_numpy(new_w).to('cuda'))
@@ -210,7 +210,7 @@ for idx in range(5):
         plt.title('No Findings', fontsize="40")
     else:
         plt.title('Pneumonia', fontsize="40")
-    alpha += 5
+    alpha += 10
     
 plt.savefig('Figure2.png')
 

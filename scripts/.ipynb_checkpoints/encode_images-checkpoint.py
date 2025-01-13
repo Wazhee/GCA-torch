@@ -308,10 +308,10 @@ def run_optimization(img, idx, mode, init, normalization = False):
       loss_mse.append(mse_loss.item())
       loss_perceptual.append(perceptual_loss.item())
 
-#       # every SAVE_STEP, I store the current latent
-#       if (i +1) % SAVE_STEP == 0:
+      # every SAVE_STEP, I store the current latent
+      if (i +1) % SAVE_STEP == 0:
 #           print('iter[%d]:\t loss: %.4f\t mse_loss: %.4f\tpercep_loss: %.4f' % (i+1,  loss.item(), mse_loss.item(), perceptual_loss.item()))
-#           latent_list[str(i+1)] = embedding_latent.detach().cpu().numpy()
+          latent_list[str(i+1)] = embedding_latent.detach().cpu().numpy()
 
   # store all the embeddings create during optimization in .npz
   path_embedding_latent = os.path.join(SAVING_DIR, 
