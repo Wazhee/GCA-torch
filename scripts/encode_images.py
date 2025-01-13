@@ -26,14 +26,66 @@ warnings.filterwarnings("ignore")
 DEVICE = torch.device('cuda')
 
 """
+Perceptual Model
+- For evaluating the similarity between two images
+"""
+class PerceptualVGG16(torch.nn.Module):
+    def __init__(self, requires_grad=False, n_layers=[2, 4, 14, 21]):
+        super(PerceptualVGG16, self).__init__()
+        
+        # Dowsampling according to input of ImageNet 256x256
+        self.upsample2d = torch.nn.Upsample(scale_factor=256/RESOLUTION, mode='bilinear')
+
+        # Get the pretrained vgg16 model
+        vgg_pretrained_features = models.vgg16(pretrained=True).features
+
+        self.slice0 = torch.nn.Sequential()
+        self.slice1 = torch.nn.Sequential()
+        self.slice2 = torch.nn.Sequential()
+        self.slice3 = torch.nn.Sequential()
+        
+        # [0,1] layers indexes
+        for x in range(n_layers[0]):  
+            self.slice0.add_module(str(x), vgg_pretrained_features[x])\
+            
+        # [2, 3] layers indexes
+        for x in range(n_layers[0], n_layers[1]):  # relu1_2
+            self.slice1.add_module(str(x), vgg_pretrained_features[x])
+        
+        # [4, 13] layers indexes
+        for x in range(n_layers[1], n_layers[2]): # relu3_2
+            self.slice2.add_module(str(x), vgg_pretrained_features[x])
+
+        # [14, 20] layers indexes
+        for x in range(n_layers[2], n_layers[3]):# relu4_2
+            self.slice3.add_module(str(x), vgg_pretrained_features[x])
+
+        # Setting the gradients to false
+        if not requires_grad:
+            for param in self.parameters():
+                param.requires_grad=False
+                
+    def forward(self, x):
+        upsample = self.upsample2d(x)
+        
+        h0 = self.slice0(upsample)
+        h1 = self.slice1(h0)
+        h2 = self.slice2(h1)
+        h3 = self.slice3(h2)
+
+        return h0, h1, h2, h3
+
+
+"""
 Initialize models :- 
 
-PRETRAINED_MODEL = pre-trained stylegan3
-ref_images = RSNA Dataset
+PRETRAINED_MODEL => pre-trained stylegan3
+ref_images => RSNA Dataset
+SAVING_DIR => directory where embeddings will be saved
 """
 
 PRETRAINED_MODEL = '../../stylegan3/results/00022-stylegan3-t-nih_chexpert-gpus4-batch16-gamma1/network-snapshot-004000.pkl'
-
+SAVING_DIR = '../../synthetic_images/' # directory where embeddings will be stored
 src_dir = '../../datasets/rsna/'
 ref_images = [os.path.join(src_dir, x) for x in os.listdir(src_dir)]
 ref_images = list(filter(os.path.isfile, ref_images))
@@ -60,7 +112,20 @@ Z_SIZE = 512
 #PATH_IMAGE = "stuff/data/expression02.png"
 PATH_IMAGE = ref_images[5]
 basename=os.path.basename(os.path.normpath(PATH_IMAGE)).split(".")[0]
-SAVING_DIR = '../../synthetic_images/' # directory where embeddings will be stored
 if not os.path.exists(SAVING_DIR):
     os.makedirs(SAVING_DIR, exist_ok=True)
+
     
+"""
+Load pretrained StyleGAN3
+"""
+with open(PRETRAINED_MODEL, 'rb') as f:
+    G = pickle.load(f)['G_ema'].to(DEVICE)  # torch.nn.Module
+    
+    
+
+"""Initialize Models and Loss functions"""
+# Pixel-Wise MSE Loss
+MSE_Loss = nn.MSELoss(reduction="mean")
+# VGG-16 perceptual loss
+perceptual_net_vgg = PerceptualVGG16(n_layers=[2,4,14,21]).to(DEVICE) 
