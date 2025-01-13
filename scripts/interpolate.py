@@ -26,6 +26,7 @@ from sklearn.preprocessing import StandardScaler
 import pandas as pd
 import random
 import matplotlib.pyplot as plt
+import os
 
 device = torch.device('cuda')
 
@@ -69,7 +70,7 @@ def xray_is_male(img):
     logits = gender_cnn(im[None,:,:,:])[0,0]
     return (logits < 0.5).detach().cpu().numpy()
 
-def create_synthetic_dataset(n_patients=1000):
+def create_synthetic_dataset(n_patients=500):
     # Generate 1000 male and female images
     styles, gender, pneumonia, images = [],[],[],[]
     male, female = 0,0
@@ -197,7 +198,7 @@ for idx in range(5):
     
 plt.savefig('Figure1.png')
 
-old_w = slatent_w ;
+old_w = latent_w ;
 fig, rows, columns = plt.figure(figsize=(50, 50)), 10,10
 alpha = 0
 for idx in range(5):
