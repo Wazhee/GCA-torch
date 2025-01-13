@@ -181,14 +181,13 @@ embeddings = [os.path.join(PATH2LATENTS, x) for x in os.listdir(PATH2LATENTS)]
 embeddings = list(filter(os.path.isfile, embeddings))
 
 for i in tqdm(range(len(embeddings[:10]))):
-
     latent_w = np.load(embeddings[i])['100']
     img = generate_image_from_style(torch.from_numpy(latent_w).to('cuda'))
 
-    fig, rows, columns = plt.figure(figsize=(20, 20)), 1,5
+    fig, rows, columns = plt.figure(figsize=(20, 20)), 1,10
     old_w = latent_w; v = clf.named_steps['linearsvc'].coef_[0].reshape((styles[0].shape))
     alpha = 0
-    for idx in range(5):
+    for idx in range(7):
         new_w = old_w + alpha * v
         img = generate_image_from_style(torch.from_numpy(new_w).to('cuda'))
         fig.add_subplot(rows, columns, idx+1); plt.imshow(img,cmap='gray'); plt.axis('off')
@@ -197,11 +196,10 @@ for i in tqdm(range(len(embeddings[:10]))):
             plt.title('Female', fontsize="40")
         else:
             plt.title('Male', fontsize="40")
-        alpha += 5
+        alpha += 10
         
     idx = embeddings[i].split('/')[-1].split('.')[0] # get save path
-    save_path = PATH_SAVE + idx + '.png'
-    plt.savefig(save)
+    plt.savefig(PATH_SAVE + idx + '.png')
 
 # old_w = latent_w ;
 # fig, rows, columns = plt.figure(figsize=(50, 50)), 10,10
