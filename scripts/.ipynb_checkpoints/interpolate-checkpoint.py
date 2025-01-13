@@ -70,7 +70,7 @@ def xray_is_male(img):
     logits = gender_cnn(im[None,:,:,:])[0,0]
     return (logits < 0.5).detach().cpu().numpy()
 
-def create_synthetic_dataset(n_patients=500):
+def create_synthetic_dataset(n_patients=1000):
     # Generate 1000 male and female images
     styles, gender, pneumonia, images = [],[],[],[]
     male, female = 0,0
@@ -174,45 +174,50 @@ clf.fit(wX, genders) # fit SVM to synthetic dataset
 Load learned image embeddings
 """
 PATH2LATENTS = '../../synthetic_images/latents/'
+PATH_SAVE = '../../datasets/augmented/'
+if not os.path.exists(PATH_SAVE):
+    os.makedirs(PATH_SAVE)
 embeddings = [os.path.join(PATH2LATENTS, x) for x in os.listdir(PATH2LATENTS)]
 embeddings = list(filter(os.path.isfile, embeddings))
 
-latent_w = np.load(embeddings[10])['100']
-img = generate_image_from_style(torch.from_numpy(latent_w).to('cuda'))
+for i in tqdm(range(len(embeddings[:10]))):
 
-fig, rows, columns = plt.figure(figsize=(50, 50)), 10,10
-subject = 807
+    latent_w = np.load(embeddings[i])['100']
+    img = generate_image_from_style(torch.from_numpy(latent_w).to('cuda'))
 
-old_w = latent_w; v = clf.named_steps['linearsvc'].coef_[0].reshape((styles[0].shape))
-alpha = 0
-for idx in range(8):
-    new_w = old_w + alpha * v
-    img = generate_image_from_style(torch.from_numpy(new_w).to('cuda'))
-    fig.add_subplot(rows, columns, idx+1); plt.imshow(img,cmap='gray'); plt.axis('off')
-    # Female classifier as title
-    if(xray_is_male(img) == False):
-        plt.title('Female', fontsize="40")
-    else:
-        plt.title('Male', fontsize="40")
-    alpha += 5
+    fig, rows, columns = plt.figure(figsize=(20, 20)), 1,5
+    old_w = latent_w; v = clf.named_steps['linearsvc'].coef_[0].reshape((styles[0].shape))
+    alpha = 0
+    for idx in range(5):
+        new_w = old_w + alpha * v
+        img = generate_image_from_style(torch.from_numpy(new_w).to('cuda'))
+        fig.add_subplot(rows, columns, idx+1); plt.imshow(img,cmap='gray'); plt.axis('off')
+        # Female classifier as title
+        if(xray_is_male(img) == False):
+            plt.title('Female', fontsize="40")
+        else:
+            plt.title('Male', fontsize="40")
+        alpha += 5
+        
+    idx = embeddings[i].split('/')[-1].split('.')[0] # get save path
+    save_path = PATH_SAVE + idx + '.png'
+    plt.savefig(save)
+
+# old_w = latent_w ;
+# fig, rows, columns = plt.figure(figsize=(50, 50)), 10,10
+# alpha = 0
+# for idx in range(5):
+#     new_w = old_w + alpha * v
+#     img = generate_image_from_style(torch.from_numpy(new_w).to('cuda'))
+#     fig.add_subplot(rows, columns, idx+1); plt.imshow(img,cmap='gray'); plt.axis('off')
+#     # Female classifier as title
+#     if(xray_has_pneumonia(img) == False):
+#         plt.title('No Findings', fontsize="40")
+#     else:
+#         plt.title('Pneumonia', fontsize="40")
+#     alpha += 10
     
-plt.savefig('Figure1.png')
-
-old_w = latent_w ;
-fig, rows, columns = plt.figure(figsize=(50, 50)), 10,10
-alpha = -20
-for idx in range(5):
-    new_w = old_w + alpha * v
-    img = generate_image_from_style(torch.from_numpy(new_w).to('cuda'))
-    fig.add_subplot(rows, columns, idx+1); plt.imshow(img,cmap='gray'); plt.axis('off')
-    # Female classifier as title
-    if(xray_has_pneumonia(img) == False):
-        plt.title('No Findings', fontsize="40")
-    else:
-        plt.title('Pneumonia', fontsize="40")
-    alpha += 10
-    
-plt.savefig('Figure2.png')
+# plt.savefig('Figure2.png')
 
 # old_w = styles[subject]; v = clf.named_steps['linearsvc'].coef_[0].reshape((styles[0].shape))
 # alpha = 0
