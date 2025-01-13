@@ -20,11 +20,18 @@ from torchvision import models as tv
 import torch
 import torchvision
 from torchvision import models, transforms
+from sklearn.svm import LinearSVC
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+# from sklearn.datasets import make_classification
+import random
+import matplotlib.pyplot as plt
 
 device = torch.device('cuda')
 
-# Useful utility functions...
-
+"""
+Useful utility functions...
+"""
 # Generates an image from a style vector.
 def generate_image_from_style(dlatent, noise_mode='none'):
     if len(dlatent.shape) == 1: 
@@ -45,6 +52,52 @@ def convert_z_to_w(latent, truncation_psi=0.7, truncation_cutoff=9, class_idx=No
         if class_idx is not None:
             print(f'warning: class_idx={class_idx} ignored when running on an unconditional network')
     return G.mapping(latent, label, truncation_psi=truncation_psi, truncation_cutoff=truncation_cutoff)
+
+# positive case = array(true)
+def xray_has_pneumonia(img):
+    im = Image.fromarray(img)
+    im = transform(im)
+#     im = Image.fromarray(im).convert("RGB") # if greyscale
+    logits = pneumonia_cnn(im[None,:,:,:])[0,0]
+    return (logits < 0.5).detach().cpu().numpy()
+
+# if true than model predicts male else female
+def xray_is_male(img):
+    im = Image.fromarray(img)
+    im = transform(im)
+#     im = Image.fromarray(im).convert("RGB") # if greyscale
+    logits = gender_cnn(im[None,:,:,:])[0,0]
+    return (logits < 0.5).detach().cpu().numpy()
+
+def create_pneumonia_dataset(n_patients=1000):
+    # Generate 1000 male and female images
+    styles, gender, pneumonia, images = [],[],[],[]
+    n_negative, n_positive = 0,0
+    while((nofind < n_patients) or (pneu < n_patients)):
+        z = torch.from_numpy(np.random.randn(1, G.z_dim)).to(device) # get random z vector
+        w = convert_z_to_w(z, truncation_psi=0.7, truncation_cutoff=9) # convert to style vector
+        img = generate_image_from_style(w) # generate image from w
+        gen, pneu = xray_is_male(img), xray_has_pneumonia(img)
+        if pneu and n_positive < n_patients:
+            styles.append(w.cpu().detach().numpy()); gender.append('male'); images.append(img)
+            pneumonia.append(1)
+            pneu+=1
+        elif n_negative < n_patients:
+            styles.append(w.cpu().detach().numpy()); gender.append('female'); images.append(img)
+            pneumonia.append(0) 
+            female+=1
+        sys.stdout.write(f"\r# males: {male}, # females: {female}")
+        sys.stdout.flush()
+        
+    # initialize synthetic dataset
+    data = {"style": styles,
+            "gender": gender,
+            "pneumonia": pneumonia,
+            "image": images}
+#     data = add_pneumonia(data)
+    print("\n",len(data['style']), len(data['gender']), len(data['pneumonia']), len(data['image']))
+    # Create DataFrame
+    return pd.DataFrame(data)
 
 """
 Load pretrained stylegan3
@@ -83,3 +136,73 @@ gender_cnn, pneumonia_cnn = gender_cnn.to(device), pneumonia_cnn.to(device)
 gender_cnn.eval(); pneumonia_cnn.eval()  # Set the model to evaluation mode
 print("Model weights loaded successfully!")
 
+# Image transformations (augmentation and normalization)
+transform = transforms.Compose([
+    transforms.Resize((224, 224)),  # ResNet50 expects 224x224 images
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),  # Pretrained ResNet normalization
+])
+
+"""
+Construct synthetic dataset
+"""
+# load RSNA csv
+rsna_df = pd.read_csv('../datasets/train_rsna.csv')
+rsna_df = rsna_df.drop_duplicates(subset='patientId', keep="last") # Clean the data
+n_true, n_false = len(rsna_df[rsna_df['Target'] == 1]), len(rsna_df[rsna_df['Target'] == 0])
+n_total = len(rsna_df)
+
+# Visualize data imbalance
+print(round(n_true/n_total * 100, 3), '% Pneumonia')
+print(round(n_false/n_total * 100, 3), '% No Finding')
+
+n_iterations = .25 * len(rsna_df)
+data = add_pneumonia()
+
+"""
+Train Linear SVM
+"""
+wX = []
+styles, genders = list(df['style']), list(df['gender'])
+for idx in tqdm(range(len(styles))):
+    wX.append(styles[idx].reshape((styles[0].shape[0]*styles[0].shape[1]*styles[0].shape[2])))
+    
+clf = make_pipeline(LinearSVC(random_state=0, tol=1e-5))
+clf.fit(wX, genders) # fit SVM to synthetic dataset
+
+
+
+
+fig, rows, columns = plt.figure(figsize=(50, 50)), 10,10
+subject = 807
+
+old_w = styles[subject]; v = clf.named_steps['linearsvc'].coef_[0].reshape((styles[0].shape))
+alpha = 0
+for idx in range(5):
+    new_w = old_w + alpha * v
+    img = generate_image_from_style(torch.from_numpy(new_w).to('cuda'))
+    fig.add_subplot(rows, columns, idx+1); plt.imshow(img,cmap='gray'); plt.axis('off')
+    # Female classifier as title
+    if(xray_is_male(img) == False):
+        plt.title('Female', fontsize="40")
+    else:
+        plt.title('Male', fontsize="40")
+    alpha += 5
+    
+plt.savefig('Figure1.png')
+
+old_w = styles[subject];
+fig, rows, columns = plt.figure(figsize=(50, 50)), 10,10
+alpha = 0
+for idx in range(5):
+    new_w = old_w + alpha * v
+    img = generate_image_from_style(torch.from_numpy(new_w).to('cuda'))
+    fig.add_subplot(rows, columns, idx+1); plt.imshow(img,cmap='gray'); plt.axis('off')
+    # Female classifier as title
+    if(xray_has_pneumonia(img) == False):
+        plt.title('No Findings', fontsize="40")
+    else:
+        plt.title('Pneumonia', fontsize="40")
+    alpha += 5
+    
+plt.savefig('Figure2.png')
