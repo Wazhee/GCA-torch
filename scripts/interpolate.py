@@ -91,12 +91,11 @@ def create_synthetic_dataset(G, gender_cnn, n_patients=500):
             "image": images}
     
     print("Finished creating synthetic dataset...")
-    print("\n",len(data['style']), len(data['gender']), len(data['pneumonia']), len(data['image']))
     # Create DataFrame
     return pd.DataFrame(data)
 
 
-def get_mean_latent():
+def get_mean_latent(G):
   n_samples = 5e5
   z = torch.randn((int(n_samples), 512), device=device)
   batch_size = int(1e5)
@@ -193,8 +192,8 @@ def augment_rsna():
 def main():
     G, gender_cnn, pneumonia_cnn = load_pretrained_models()
     df, embeddings = create_synthetic_dataset(G, gender_cnn), load_embeddings()
-    mean_w = get_mean_latent().detach().cpu().numpy()
-    augment_rnsa()
+    mean_w = get_mean_latent(G).detach().cpu().numpy()
+    augment_rsna()
     # Image transformations (augmentation and normalization)
 
             
