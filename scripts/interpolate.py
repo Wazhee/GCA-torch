@@ -70,7 +70,7 @@ def xray_is_male(img):
     logits = gender_cnn(im[None,:,:,:])[0,0]
     return (logits < 0.5).detach().cpu().numpy()
 
-def create_synthetic_dataset(n_patients=1000):
+def create_synthetic_dataset(n_patients=500):
     # Generate 1000 male and female images
     styles, gender, pneumonia, images = [],[],[],[]
     male, female = 0,0
@@ -100,6 +100,22 @@ def create_synthetic_dataset(n_patients=1000):
     print("\n",len(data['style']), len(data['gender']), len(data['pneumonia']), len(data['image']))
     # Create DataFrame
     return pd.DataFrame(data)
+
+
+def get_mean_latent():
+  n_samples = 5e5
+  z = torch.randn((int(n_samples), 512), device=device)
+  batch_size = int(1e5)
+
+  w_mean = torch.zeros((1,16,512),requires_grad=True,device=device)
+  for i in range(int(n_samples/batch_size)):
+    w = G.mapping(z[i*batch_size:(i+1)*batch_size,:], None)
+    w = torch.sum(w, dim = 0).unsqueeze(0)
+    w_mean = w_mean + w
+
+  w_mean = w_mean / n_samples
+
+  return w_mean.clone().detach().requires_grad_(True)
 
 """
 Load pretrained stylegan3
@@ -170,6 +186,8 @@ for idx in tqdm(range(len(styles))):
 clf = make_pipeline(LinearSVC(random_state=0, tol=1e-5))
 clf.fit(wX, genders) # fit SVM to synthetic dataset
 
+mean_w = get_mean_latent().detach().cpu().numpy()
+
 """
 Load learned image embeddings
 """
@@ -180,26 +198,26 @@ if not os.path.exists(PATH_SAVE):
 embeddings = [os.path.join(PATH2LATENTS, x) for x in os.listdir(PATH2LATENTS)]
 embeddings = list(filter(os.path.isfile, embeddings))
 
-for i in tqdm(range(len(embeddings[ss]))):
+for i in tqdm(range(len(embeddings))):
+    idx = embeddings[i].split('/')[-1].split('.')[0] # get save path
     latent_w = np.load(embeddings[i])['100']
     img = generate_image_from_style(torch.from_numpy(latent_w).to('cuda'))
 
-    fig, rows, columns = plt.figure(figsize=(20, 20)), 1,10
-    old_w = latent_w; v = clf.named_steps['linearsvc'].coef_[0].reshape((styles[0].shape))
+    fig, rows, columns = plt.figure(figsize=(20, 50)), 1,10
+    old_w = latent_w + mean_w; v = clf.named_steps['linearsvc'].coef_[0].reshape((styles[0].shape))
     alpha = 0
-    for idx in range(7):
+    step_size = -8 if xray_is_male(img) else 5
+    for j in range(5):
         new_w = old_w + alpha * v
         img = generate_image_from_style(torch.from_numpy(new_w).to('cuda'))
-        fig.add_subplot(rows, columns, idx+1); plt.imshow(img,cmap='gray'); plt.axis('off')
+#         fig.add_subplot(rows, columns, idx+1); plt.imshow(img,cmap='gray'); plt.axis('off')
         # Female classifier as title
-        if(xray_is_male(img) == False):
-            plt.title('Female', fontsize="40")
-        else:
-            plt.title('Male', fontsize="40")
-        alpha += 12
-        
-    idx = embeddings[i].split('/')[-1].split('.')[0] # get save path
-    plt.savefig(PATH_SAVE + idx + '.png')
+#         if(xray_is_male(img) == False):
+#             plt.title('Female', fontsize="40")
+#         else:
+#             plt.title('Male', fontsize="40")
+        alpha += step_size
+        cv2.imwrite(f"{PATH_SAVE}{j+1}x{idx}.png", img)
 
 # old_w = latent_w ;
 # fig, rows, columns = plt.figure(figsize=(50, 50)), 10,10
