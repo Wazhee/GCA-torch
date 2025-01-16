@@ -36,6 +36,9 @@ for idx in tqdm(range(50)):
     alpha += 1
 ```
 
+## Simulating Adversarial Attacks
+We used code from HiddenInPlainSight [[Code](https://github.com/BioIntelligence-Lab/HiddenInPlainSight)][[Paper](https://github.com/BioIntelligence-Lab/HiddenInPlainSight)]
+
 To run original HiddenInPlainSightCode
 ```python
 python src/main.py -train -model densenet -augment True
