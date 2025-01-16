@@ -7,21 +7,21 @@ We explore how to construct unbiased Chest X-Ray datasets using StyleGAN!
 <img height="250" width="500" alt="m2f" src="https://github.com/user-attachments/assets/a35f516d-b86c-4bb7-a74b-a97c295fcd4d">
 
 
-### Setup
+## Setup
 
 ```
 git clone "https://github.com/Wazhee/Debiasing-Chest-X-Rays-with-StyleGAN.git"
 cd Debiasing-Chest-X-Rays-with-StyleGAN
 ```
 
-### Training Chest X-Ray Classifiers
+## Training Chest X-Ray Classifiers
 ```linux 
 python ../resnet50_cardiomegaly.py     # disease classification
 python ../resnet50_age.py     # age classification
 python ../resnet50_gender.py     # gender classification
 ```
 
-### Generate intermediate images with linear SVM and StyleGAN
+## Generate intermediate images with linear SVM and StyleGAN
 ```python
 old_w = styles[4]; v = clf.named_steps['linearsvc'].coef_[0].reshape((styles[0].shape))
 alpha = -30
