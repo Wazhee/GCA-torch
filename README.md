@@ -36,3 +36,11 @@ for idx in tqdm(range(50)):
     alpha += 1
 ```
 
+To run original HiddenInPlainSightCode
+```python
+python src/main.py -train -model densenet -augment True
+```
+To simulate adversarial attacks on augmented dataset
+```python
+python src/main.py -train -model densenet -augment True
+```
