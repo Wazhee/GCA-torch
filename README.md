@@ -41,7 +41,7 @@ We used code from HiddenInPlainSight [[Code](https://github.com/BioIntelligence-
 
 To run original HiddenInPlainSightCode
 ```python
-python src/main.py -train -model densenet -augment True
+python src/main.py -train
 ```
 To simulate adversarial attacks on augmented dataset
 ```python
