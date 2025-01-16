@@ -27,6 +27,7 @@ import pandas as pd
 import random
 import matplotlib.pyplot as plt
 import os
+import shutil
 
 device = torch.device('cuda')
 
@@ -180,7 +181,6 @@ def augment_rsna(G, embeddings, mean_w, clf, df, gender_cnn):
         idx = embeddings[i].split('/')[-1].split('.')[0] # get save path
         latent_w = np.load(embeddings[i])['100']
         img = generate_image_from_style(G, torch.from_numpy(latent_w).to('cuda'))
-        
         alpha = 0
         old_w = latent_w + mean_w; v = clf.named_steps['linearsvc'].coef_[0].reshape((styles[0].shape))
         step_size = -8 if xray_is_male(img, gender_cnn) else 5
@@ -188,15 +188,26 @@ def augment_rsna(G, embeddings, mean_w, clf, df, gender_cnn):
             new_w = old_w + alpha * v
             img = generate_image_from_style(G, torch.from_numpy(new_w).to('cuda'))
             alpha += step_size
-#             cv2.imwrite(f"{PATH_SAVE}{j+1}x{idx}.png", img)
+            cv2.imwrite(f"{PATH_SAVE}{j+1}x{idx}.png", img)
+            
+def add_original_data():
+    src_dir, savepath = '../../datasets/rsna/', '../../datasets/augmented/'
+    rsna_images = [os.path.join(src_dir, x) for x in os.listdir(src_dir)]
+    rsna_images = list(filter(os.path.isfile, rsna_images))
+    print("before: ", len(os.listdir(savepath)))
+    for src in tqdm(rsna_images):
+        dest = savepath + src.split('/')[-1] # Destination directory
+        shutil.copy(src, dest) # Copy the file to savepath
+    print("after: ", len(os.listdir(savepath)))
+    
 
 def main():
-    G, gender_cnn, pneumonia_cnn = load_pretrained_models()
-    df, embeddings = create_synthetic_dataset(G, gender_cnn), load_embeddings()
-    clf = train_svm(df)
-    mean_w = get_mean_latent(G).detach().cpu().numpy()
-    augment_rsna(G, embeddings, mean_w, clf, df, gender_cnn)
-    # Image transformations (augmentation and normalization)
+#     G, gender_cnn, pneumonia_cnn = load_pretrained_models()
+#     df, embeddings = create_synthetic_dataset(G, gender_cnn), load_embeddings()
+#     clf = train_svm(df)
+#     mean_w = get_mean_latent(G).detach().cpu().numpy()
+#     augment_rsna(G, embeddings, mean_w, clf, df, gender_cnn)
+    add_original_data() # add original images to data augmentation
 
             
 if __name__ == "__main__":
