@@ -153,7 +153,7 @@ def load_pretrained_models():
 """
 Train Linear SVM
 """
-def train_svm():
+def train_svm(df):
     wX = []
     styles, genders = list(df['style']), list(df['gender'])
     for idx in tqdm(range(len(styles))):
@@ -161,6 +161,7 @@ def train_svm():
 
     clf = make_pipeline(LinearSVC(random_state=0, tol=1e-5))
     clf.fit(wX, genders) # fit SVM to synthetic dataset
+    return clf
 
 """
 Load learned image embeddings
@@ -173,27 +174,28 @@ def load_embeddings():
     embeddings = [os.path.join(PATH2LATENTS, x) for x in os.listdir(PATH2LATENTS)] 
     return list(filter(os.path.isfile, embeddings))
 
-def augment_rsna():
+def augment_rsna(G, embeddings, mean_w, clf, df, gender_cnn):
+    styles = list(df['style'])
     for i in tqdm(range(len(embeddings))):
         idx = embeddings[i].split('/')[-1].split('.')[0] # get save path
         latent_w = np.load(embeddings[i])['100']
-        img = generate_image_from_style(torch.from_numpy(latent_w).to('cuda'))
-
-        fig, rows, columns = plt.figure(figsize=(20, 50)), 1,10
-        old_w = latent_w + mean_w; v = clf.named_steps['linearsvc'].coef_[0].reshape((styles[0].shape))
+        img = generate_image_from_style(G, torch.from_numpy(latent_w).to('cuda'))
+        
         alpha = 0
-        step_size = -8 if xray_is_male(img) else 5
+        old_w = latent_w + mean_w; v = clf.named_steps['linearsvc'].coef_[0].reshape((styles[0].shape))
+        step_size = -8 if xray_is_male(img, gender_cnn) else 5
         for j in range(5):
             new_w = old_w + alpha * v
-            img = generate_image_from_style(torch.from_numpy(new_w).to('cuda'))
+            img = generate_image_from_style(G, torch.from_numpy(new_w).to('cuda'))
             alpha += step_size
 #             cv2.imwrite(f"{PATH_SAVE}{j+1}x{idx}.png", img)
 
 def main():
     G, gender_cnn, pneumonia_cnn = load_pretrained_models()
     df, embeddings = create_synthetic_dataset(G, gender_cnn), load_embeddings()
+    clf = train_svm(df)
     mean_w = get_mean_latent(G).detach().cpu().numpy()
-    augment_rsna()
+    augment_rsna(G, embeddings, mean_w, clf, df, gender_cnn)
     # Image transformations (augmentation and normalization)
 
             
