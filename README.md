@@ -36,11 +36,11 @@ for idx in tqdm(range(50)):
     alpha += 1
 ```
 
-## Simulating Adversarial Attacks
+## Simulating Adversarial Attacks 
 We used code from HiddenInPlainSight [[Code](https://github.com/BioIntelligence-Lab/HiddenInPlainSight)][[Paper](https://arxiv.org/abs/2402.05713)] to simulate adversarial attacks. Specifically we demonstrate how our augmentation method improves the robustness of CXR classifiers against label poisoning attacks.
 
-
-All code for simulating adversarial label poisoning is found in HiddenIPS folder
+Link to the sample section: [Link Text](#HiddenIPS).
+All code for simulating adversarial label poisoning is found in HiddenIPS folder 
 ```python
 cd HiddenIPS
 ```
