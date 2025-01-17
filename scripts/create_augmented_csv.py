@@ -10,7 +10,7 @@ def construct_df(path):
     sex, age, age_group = list(df['Sex']), list(df['Age']), list(df['Age_group'])
     for i in tqdm(range(len(ids))):
         for j in range(5):
-            ids.append(f'{j+1}x_{ids[i]}'); labels.append(labels[i])
+            ids.append(f'{j+1}x{ids[i]}'); labels.append(labels[i])
             sex.append(sex[i]); age.append(age[i]); age_group.append(age_group[i])
     tmp = {'path':ids,
            'Pneumonia_RSNA':labels,
