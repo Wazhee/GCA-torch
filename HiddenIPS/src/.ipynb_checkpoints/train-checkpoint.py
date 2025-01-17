@@ -37,7 +37,7 @@ def train_aim_2(model, sex=None, age=None, augmentation=False):
   else:
     target_path = 'target_all'
     
-  for trial in range(3, num_trials):
+  for trial in range(num_trials):
     #[0.05, 0.1, 0.25, 0.5, 0.75, 1.0]
     for rate in [0, 0.1]:
       if augmentation:
