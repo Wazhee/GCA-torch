@@ -9,13 +9,13 @@ We explore how to construct unbiased Chest X-Ray datasets using StyleGAN!
 
 ## Setup
 
-```
+```python
 git clone "https://github.com/Wazhee/Debiasing-Chest-X-Rays-with-StyleGAN.git"
 cd Debiasing-Chest-X-Rays-with-StyleGAN
 ```
 
 ## Training Chest X-Ray Classifiers
-```linux 
+```python
 python ../resnet50_cardiomegaly.py     # disease classification
 python ../resnet50_age.py     # age classification
 python ../resnet50_gender.py     # gender classification
