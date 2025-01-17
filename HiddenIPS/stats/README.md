@@ -1,0 +1,1 @@
+In each experiment, we statistically compared inter-rate and inter-group comparisons between FNR and FOR. For inter-group comparisons between a group and overall model, independent t-tests are used with Benjamini–Hochberg correction. Paired t-tests are used for inter-rate comparisons within a group. Statistical significance is defined as _P_<0.05. 
