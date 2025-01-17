@@ -41,14 +41,14 @@ We used code from HiddenInPlainSight [[Code](https://github.com/BioIntelligence-
 
 
 All code for simulating adversarial label poisoning is found in HiddenIPS folder
-```linux
+```python
 cd HiddenIPS
 ```
 To run original HiddenInPlainSight Code
-```linux
+```python
 python src/main.py -train
 ```
 To simulate adversarial attacks on augmented dataset
-```linux
+```python
 python src/main.py -train -model densenet -augment True
 ```
