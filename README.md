@@ -9,6 +9,7 @@ We explore how to construct unbiased Chest X-Ray datasets using StyleGAN!
 <br />
 Our method successfully mitigates the affects of adversarial label posioning attacks
 <br />
+<br>
 <img width="508" alt="Screenshot 2025-01-17 at 9 43 55 AM" src="https://github.com/user-attachments/assets/0150b6e1-0113-4334-9127-2606fc9196ac" />
 
 ## Setup
