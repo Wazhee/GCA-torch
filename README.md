@@ -57,3 +57,9 @@ To simulate adversarial attacks on augmented dataset
 ```python
 python src/main.py -train -model densenet -augment True
 ```
+
+To specify the attack rate
+```python
+python src/main.py -train -model densenet -augment True -rate 0.05 -gpu 0
+```
+
