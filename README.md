@@ -11,6 +11,7 @@ Our method effectively mitigates the effects of adversarial label poisoning atta
 <br />
 <br>
 <img width="508" alt="Screenshot 2025-01-17 at 9 43 55 AM" src="https://github.com/user-attachments/assets/0150b6e1-0113-4334-9127-2606fc9196ac" />
+<img width="513" alt="rsna vs synth_rsna" src="https://github.com/user-attachments/assets/8662a643-20eb-40bd-9a2d-d8d702355dba" />
 
 ## Setup
 
