@@ -2,9 +2,17 @@ from models import *
 from dataset import Dataset
 import pandas as pd
 import numpy as np
+import argparse
+from sklearn.model_selection import train_test_split
 
-os.environ["CUDA_VISIBLE_DEVICES"]="0"
+parser = argparse.ArgumentParser()
+parser.add_argument('-model', default='densenet', choices=['densenet', 'resnet', 'inception'])
+parser.add_argument('-augment', help='use augmented dataset', type=bool, default=False) 
+parser.add_argument('-gpu', help='specify which gpu to use', type=str, default="0") 
 
+args = parser.parse_args()
+
+os.environ["CUDA_VISIBLE_DEVICES"]=args.gpu
 
 """
 Class Labels:
@@ -16,28 +24,32 @@ Class Labels:
 4: 80+
 """
 
-
 def load_data(path, trial=0):
+    y_column = 'Patient Age'
     df = pd.DataFrame(pd.read_csv(path))
     tmp = df.copy()
     for idx in range(len(tmp)):
-        if tmp.iloc[idx]['Age'] > 0 and tmp.iloc[idx]['Age'] <= 20:
-            tmp.at[idx, 'Age'] = 0
-        elif tmp.iloc[idx]['Age'] > 20 and tmp.iloc[idx]['Age'] <= 40:
-            tmp.at[idx, 'Age'] = 1
-        elif tmp.iloc[idx]['Age'] >= 40 and tmp.iloc[idx]['Age'] <= 60:
-            tmp.at[idx, 'Age'] = 2
-        elif tmp.iloc[idx]['Age'] >= 60 and tmp.iloc[idx]['Age'] <= 80:
-            tmp.at[idx, 'Age'] = 3
-        elif tmp.iloc[idx]['Age'] > 80:
-            tmp.at[idx, 'Age'] = 4
-    classes =  tmp['Age'].unique()
+        if tmp.iloc[idx][y_column] > 0 and tmp.iloc[idx][y_column] <= 20:
+            tmp.at[idx, y_column] = 0
+        elif tmp.iloc[idx][y_column] > 20 and tmp.iloc[idx][y_column] <= 40:
+            tmp.at[idx, y_column] = 1
+        elif tmp.iloc[idx][y_column] >= 40 and tmp.iloc[idx][y_column] <= 60:
+            tmp.at[idx, y_column] = 2
+        elif tmp.iloc[idx][y_column] >= 60 and tmp.iloc[idx][y_column] <= 80:
+            tmp.at[idx, y_column] = 3
+        elif tmp.iloc[idx][y_column] > 80:
+            tmp.at[idx, y_column] = 4
+    classes =  tmp[y_column].unique()
     print(f'classes: {classes}, n_classes: {len(classes)}')
-    return tmp
+    
+    # split rsna data frame into 80% train and 20% test
+    train_df, test_df = train_test_split(tmp, test_size=0.2, random_state=42) 
+    
+    return train_df, test_df
     
 
 def training_loop(model, train_data, val_data,  learning_rate = 5e-5, epochs=100):
-    trial, MODEL_DIR, LOGS_DIR, ckpt_dir = 0, '../models/', '../models/logs/', '{model}.hdf5'
+    trial, MODEL_DIR, LOGS_DIR, ckpt_dir = 0, '../models/', '../models/logs/', f'{model}.hdf5'
     model = create_model(model)
     model.compile(
         optimizer = keras.optimizers.Adam(learning_rate),
@@ -72,13 +84,9 @@ def training_loop(model, train_data, val_data,  learning_rate = 5e-5, epochs=100
     
     
 if __name__ == "__main__":
-    # Load model architecture
-   
-
     # Directory containing the images
     image_dir, trial = "../datasets/rsna/", 0
-    train_csv, val_csv = f'HiddenIPS/splits/trial_{trial}/train.csv', f'HiddenIPS/splits/trial_{trial}/train.csv'
-    train_df, val_df = load_data(train_csv, trial=0), load_data(val_csv, trial=0) # load one-hot encoding of train and val datasets
+    train_df, val_df = load_data(f'../datasets/rsna_patients.csv', trial=0)
     batch_size = 32
     image_shape = (224, 224, 3)
 
@@ -87,5 +95,6 @@ if __name__ == "__main__":
     val_ds = Dataset(val_df, image_dir, batch_size, image_shape, augment=True)
     train_data, val_data = train_ds.create_dataset(), val_ds.create_dataset()
     
-    training_loop("densenet", train_data, val_data)
+    # Begin training
+    training_loop(args.model, train_data, val_data)
 

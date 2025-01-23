@@ -43,8 +43,8 @@ class Dataset:
 
     def create_dataset(self):
         # Convert the DataFrame to lists of image paths and labels
-        image_paths = self.dataframe['path'].apply(lambda x: f"{self.image_dir}/{x}").tolist()
-        labels = self.dataframe['Age'].tolist()
+        image_paths = self.dataframe['Image Index'].apply(lambda x: f"{self.image_dir}/{x}").tolist()
+        labels = self.dataframe['Patient Age'].tolist()
 
         # Create a TensorFlow dataset from the image paths and labels
         dataset = tf.data.Dataset.from_tensor_slices((image_paths, labels))
