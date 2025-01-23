@@ -9,7 +9,7 @@ LOGS_DIR = 'logs/'
 def load_model(path):
   return keras.models.load_model(os.path.join(MODEL_DIR, path))
 
-def create_model(model, num_classes, image_shape=(224,224,3)):
+def create_model(model, num_classes=5, image_shape=(224,224,3)):
   # Perform data augmentation for robustness
   data_augmentation = keras.Sequential([
     layers.RandomRotation(0.2), 

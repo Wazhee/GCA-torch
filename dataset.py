@@ -25,7 +25,7 @@ class Dataset:
                 layers.RandomZoom((-0.5, 0.5), (-0.5, 0.5)),
                 layers.RandomContrast(0.75),
             ])
-
+            
     def preprocess_image(self, image_path, label):
         # Load and decode image
         image = tf.io.read_file(image_path)
@@ -43,7 +43,7 @@ class Dataset:
 
     def create_dataset(self):
         # Convert the DataFrame to lists of image paths and labels
-        image_paths = self.dataframe['Image_Name'].apply(lambda x: f"{self.image_dir}/{x}").tolist()
+        image_paths = self.dataframe['path'].apply(lambda x: f"{self.image_dir}/{x}").tolist()
         labels = self.dataframe['Age'].tolist()
 
         # Create a TensorFlow dataset from the image paths and labels
