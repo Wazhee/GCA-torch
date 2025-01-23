@@ -11,7 +11,7 @@ import os
 def create_dataset(df, X, y, image_shape=(224,224), seed=1337, batch_size=64, buffer_size=32, shuffle=True):
   ds = imflow.image_dataset_from_dataframe(
     df, X, y,
-    label_mode = 'binary',
+    label_mode = 'multi_label',
     image_size = image_shape,
     batch_size = batch_size,
     seed = seed,

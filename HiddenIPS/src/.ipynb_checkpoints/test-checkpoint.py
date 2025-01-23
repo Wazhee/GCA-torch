@@ -21,7 +21,7 @@ def test_aim_2_baseline(model_arch, test_data):
     # Set up test data
     test_ds = Dataset(
       pd.read_csv(f'splits/{test_data}_test.csv'),
-      ['Pneumonia_RSNA'],
+      ['Age'],
       test_data
     )
     y_pred = model.predict(test_ds.get_dataset(shuffle=False))
@@ -54,7 +54,7 @@ def test_aim_2(model_arch, test_data, sex=None, age=None, augmentation=False):
           # Set up test data
           test_ds = Dataset(
             pd.read_csv(f'splits/{test_data}_test.csv'),
-            ['Pneumonia_RSNA'],
+            ['Age'],
             test_data
           )
           y_pred = model.predict(test_ds.get_dataset(shuffle=False))
@@ -74,10 +74,10 @@ def test_aim_2(model_arch, test_data, sex=None, age=None, augmentation=False):
           # Set up test data
           test_ds = Dataset(
             pd.read_csv(f'splits/{test_data}_test.csv'),
-            ['Pneumonia_RSNA'],
+            ['Age'],
             test_data
           )
           y_pred = model.predict(test_ds.get_dataset(shuffle=False))
           df = pd.DataFrame(pd.read_csv(f'splits/{test_data}_test.csv')['path'])
-          df['Pneumonia_pred'] = y_pred
+          df['Age'] = y_pred
           df.to_csv(f'results/{ckpt_dir}_{test_data}_pred.csv', index=False)
