@@ -37,6 +37,7 @@ device = torch.device('cuda')
 # https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/ffhq.pkl
 # https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metfaces.pkl
 
+path2latents = '../synthetic_images/latents/'
 network_pkl = "../stylegan3/results/00022-stylegan3-t-nih_chexpert-gpus4-batch16-gamma1/network-snapshot-004000.pkl"
 # If downloads fails, you can try downloading manually and uploading to the session directly 
 # network_pkl = "/content/ffhq.pkl"
@@ -101,20 +102,6 @@ def load_data(df):
     print(f'classes: {classes}, n_classes: {len(classes)}')
     return tmp
 
-# load extreme latent vectors '0-20' & '80+' subgroups
-def load_age_dataset(class0, class1):
-    path2latents = '../synthetic_images/latents/'
-    X1, y1, X2, y2 = [], [], [], []
-    for i in tqdm(range(len(class0))):
-        x1_path = os.path.join(path2latents, class0.iloc[i]['Image Index'].split('.')[0] + '.npz')
-        X1.append(np.load(x1_path)['100'])
-        y1.append(class0.iloc[i]['Patient Age'])
-    for i in tqdm(range(len(class1))):
-        x2_path = os.path.join(path2latents, class1.iloc[i]['Image Index'].split('.')[0] + '.npz')
-        X2.append(np.load(x1_path)['100'])
-        y2.append(class1.iloc[i]['Patient Age'])
-    return X1,X2,y1,y2
-
 def load_csv():
     # load RSNA csv
     rsna_df = pd.read_csv('../datasets/rsna_patients.csv')
@@ -137,6 +124,19 @@ def load_csv():
     class3 = df[df["Patient Age"] == 3]
     class4 = df[df["Patient Age"] == 4]
     return class0, class1, class2, class3, class4
+
+# load extreme latent vectors '0-20' & '80+' subgroups
+def load_age_dataset(class0, class1):
+    X1, y1, X2, y2 = [], [], [], []
+    for i in tqdm(range(len(class0))):
+        x1_path = os.path.join(path2latents, class0.iloc[i]['Image Index'].split('.')[0] + '.npz')
+        X1.append(np.load(x1_path)['100'])
+        y1.append(class0.iloc[i]['Patient Age'])
+    for i in tqdm(range(len(class1))):
+        x2_path = os.path.join(path2latents, class1.iloc[i]['Image Index'].split('.')[0] + '.npz')
+        X2.append(np.load(x1_path)['100'])
+        y2.append(class1.iloc[i]['Patient Age'])
+    return X1,X2,y1,y2
 
 def sample_subgroups(class0, class1, class2, class3, class4):
     idx = random.randint(0, len(class4))
@@ -164,17 +164,54 @@ def train_svm(styles):
     clf.fit(wX, ages)
     return clf, wX
 
+def forward_interpolation(X):
+    alpha, images = 0, []
+    old_w = X; v = clf.named_steps['linearsvc'].coef_[0].reshape((X[0].shape))
+    for idx in range(5):
+        new_w = old_w + alpha * v
+        img = generate_image_from_style(torch.from_numpy(new_w).to('cuda'))
+        images.append(img)
+        alpha += 80
+    return images
+
+def backward_interpolation(X):
+    alpha, images = 0, []
+    old_w = X; v = clf.named_steps['linearsvc'].coef_[0].reshape((X[0].shape))
+    for idx in range(5):
+        new_w = old_w + alpha * v
+        img = generate_image_from_style(torch.from_numpy(new_w).to('cuda'))
+        images.append(img)
+        alpha -= 80
+    return images
+
+def create_augmented_dataset(groups):
+    for i in range(len(groups[:2])):
+        for j in tqdm(range(len(groups[i]))):
+            x_path = os.path.join(path2latents, groups[i].iloc[j]['Image Index'].split('.')[0] + '.npz')
+            X, y = np.load(x_path)['100'], groups[i].iloc[j]['Patient Age']
+            if i == 0:
+                images = forward_interpolation(X)
+                print(len(images))
+#             elif i == 1:
+#                 images = [backward_interpolation(X)[1]] + forward_interpolation(X)[:5]
+#             elif i == 2:
+#                 images = [backward_interpolation(X)[1:3]] + forward_interpolation(X)[:4]
+#             elif i == 3:
+#                 images = [backward_interpolation(X)[1:4]] + forward_interpolation(X)[:3]
+#             else:
+#                 images = backward_interpolation(X)
+
 if __name__ == "__main__":
     age_groups = {0: '0-20', 1: '20-40', 2: '40-60', 3: '60-80', 4: '80+'} # class definitions
     class0, class1, class2, class3, class4 = load_csv()
     sample_subgroups(class0, class1, class2, class3, class4) # save figure of subgroups
     X1,X2,y1,y2 = load_age_dataset(class0, class4) # load samples from '0-20' & '80+' subgroups
     styles, ages = X1+X2, y1+y2
-    del X1,X2,y1,y2
-    clf, wX = train_svm(styles)
-    
-    
-        
+    del X1,X2,y1,y2  # clear from memory
+    clf, wX = train_svm(styles) # train linear SVM
+    del styles  # clear from memory
+    create_augmented_dataset([class0, class1, class2, class3, class4]) # save augmented dataset
+         
 
 
 
@@ -185,20 +222,3 @@ if __name__ == "__main__":
 
     
     
-# fig, rows, columns = plt.figure(figsize=(50, 50)), 10,10
-# mean_w = get_mean_latent().detach().cpu().numpy()
-
-# idx = -15
-# old_w = styles[idx]; v = clf.named_steps['linearsvc'].coef_[0].reshape((styles[0].shape))
-# age = ages[idx]
-# alpha = 0
-# print("Class0: ", age, " -->  Class1: ", ages[-1])
-# saved_images = []
-# for idx in range(5):
-#     new_w = old_w + alpha * v
-#     img = generate_image_from_style(torch.from_numpy(new_w).to('cuda'))
-#     saved_images.append(img)
-#     fig.add_subplot(rows, columns, idx+1); plt.imshow(img,cmap='gray'); plt.axis('off')
-#         # Female classifier as title
-#     plt.title(age_groups[age], fontsize="40")
-#     alpha -= 80
