@@ -138,43 +138,51 @@ def load_csv():
     class4 = df[df["Patient Age"] == 4]
     return class0, class1, class2, class3, class4
 
+def sample_subgroups(class0, class1, class2, class3, class4):
+    idx = random.randint(0, len(class4))
+    img_cls0 = cv2.imread("../datasets/rsna/" + class0.iloc[idx]["Image Index"])
+    img_cls1 = cv2.imread("../datasets/rsna/" + class1.iloc[idx]["Image Index"])
+    img_cls2 = cv2.imread("../datasets/rsna/" + class2.iloc[idx]["Image Index"])
+    img_cls3 = cv2.imread("../datasets/rsna/" + class3.iloc[idx]["Image Index"])
+    img_cls4 = cv2.imread("../datasets/rsna/" + class4.iloc[idx]["Image Index"])
+
+    plt.figure(figsize=(15,15))
+    plt.subplot(551);plt.imshow(img_cls0);plt.axis(False);plt.title("0-20 Years")
+    plt.subplot(552);plt.imshow(img_cls1);plt.axis(False);plt.title("20-40 Years")
+    plt.subplot(553);plt.imshow(img_cls2);plt.axis(False);plt.title("40-60 Years")
+    plt.subplot(554);plt.imshow(img_cls3);plt.axis(False);plt.title("60-80 Years")
+    plt.subplot(555);plt.imshow(img_cls4);plt.axis(False);plt.title("80+ Years")
+    plt.savefig("Figures/age_groups.png")
+    
+def train_svm(styles):
+    print("\nNow training linear SVM...")
+    wX = []
+    # styles, genders = list(df['style']), list(df['gender'])
+    for idx in tqdm(range(len(styles))):
+        wX.append(styles[idx].reshape((styles[0].shape[0]*styles[0].shape[1]*styles[0].shape[2])))
+    clf = make_pipeline(LinearSVC(random_state=0, tol=1e-5))
+    clf.fit(wX, ages)
+    return clf, wX
+
 if __name__ == "__main__":
+    age_groups = {0: '0-20', 1: '20-40', 2: '40-60', 3: '60-80', 4: '80+'} # class definitions
     class0, class1, class2, class3, class4 = load_csv()
-    X1,X2,y1,y2 = load_age_dataset(class0, class4)
+    sample_subgroups(class0, class1, class2, class3, class4) # save figure of subgroups
+    X1,X2,y1,y2 = load_age_dataset(class0, class4) # load samples from '0-20' & '80+' subgroups
     styles, ages = X1+X2, y1+y2
     del X1,X2,y1,y2
-    print(len(styles), len(ages))
+    clf, wX = train_svm(styles)
+    
+    
         
 
-# idx = random.randint(0, len(class4))
 
-# img_cls0 = cv2.imread("../datasets/rsna/" + class0.iloc[idx]["Image Index"])
-# img_cls1 = cv2.imread("../datasets/rsna/" + class1.iloc[idx]["Image Index"])
-# img_cls2 = cv2.imread("../datasets/rsna/" + class2.iloc[idx]["Image Index"])
-# img_cls3 = cv2.imread("../datasets/rsna/" + class3.iloc[idx]["Image Index"])
-# img_cls4 = cv2.imread("../datasets/rsna/" + class4.iloc[idx]["Image Index"])
 
-# plt.figure(figsize=(15,15))
-# plt.subplot(551);plt.imshow(img_cls0);plt.axis(False);plt.title("0-20 Years")
-# plt.subplot(552);plt.imshow(img_cls1);plt.axis(False);plt.title("20-40 Years")
-# plt.subplot(553);plt.imshow(img_cls2);plt.axis(False);plt.title("40-60 Years")
-# plt.subplot(554);plt.imshow(img_cls3);plt.axis(False);plt.title("60-80 Years")
-# plt.subplot(555);plt.imshow(img_cls4);plt.axis(False);plt.title("80+ Years")
-# plt.savefig("Figures/age_groups.png")
 
-# X1,X2,y1,y2 = load_age_dataset(class0, class4)
-# styles, ages = X1+X2, y1+y2
 
-# wX = []
-# # styles, genders = list(df['style']), list(df['gender'])
-# for idx in tqdm(range(len(styles))):
-#     wX.append(styles[idx].reshape((styles[0].shape[0]*styles[0].shape[1]*styles[0].shape[2])))
-    
-    
-# clf = make_pipeline(LinearSVC(random_state=0, tol=1e-5))
-# clf.fit(wX, ages)
 
-# age_groups = {0: '0-20', 1: '20-40', 2: '40-60', 3: '60-80', 4: '80+'}
+
+
     
     
 # fig, rows, columns = plt.figure(figsize=(50, 50)), 10,10
