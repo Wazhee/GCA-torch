@@ -20,6 +20,10 @@ import pandas as pd
 import os
 import matplotlib.pyplot as plt
 import random
+from sklearn.svm import LinearSVC
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+# from sklearn.datasets import make_classification
 
 
 device = torch.device('cuda')
@@ -95,62 +99,98 @@ def load_data(df):
             tmp.at[idx, y_column] = 4
     classes =  tmp[y_column].unique()
     print(f'classes: {classes}, n_classes: {len(classes)}')
-
     return tmp
 
+# load extreme latent vectors '0-20' & '80+' subgroups
+def load_age_dataset(class0, class1):
+    path2latents = '../synthetic_images/latents/'
+    X1, y1, X2, y2 = [], [], [], []
+    for i in tqdm(range(len(class0))):
+        x1_path = os.path.join(path2latents, class0.iloc[i]['Image Index'].split('.')[0] + '.npz')
+        X1.append(np.load(x1_path)['100'])
+        y1.append(class0.iloc[i]['Patient Age'])
+    for i in tqdm(range(len(class1))):
+        x2_path = os.path.join(path2latents, class1.iloc[i]['Image Index'].split('.')[0] + '.npz')
+        X2.append(np.load(x1_path)['100'])
+        y2.append(class1.iloc[i]['Patient Age'])
+    return X1,X2,y1,y2
 
-# load RSNA csv
-rsna_df = pd.read_csv('../datasets/rsna_patients.csv')
-rsna_df = rsna_df.drop_duplicates(subset='Image Index', keep="last") # Clean the data
-len(rsna_df)
+def load_csv():
+    # load RSNA csv
+    rsna_df = pd.read_csv('../datasets/rsna_patients.csv')
+    rsna_df = rsna_df.drop_duplicates(subset='Image Index', keep="last") # Clean the data
+    len(rsna_df)
+    classes = [2149, 8008, 13118, 6454, 271]
+    percentages = [round(classes[0]/sum(classes), 2), round(classes[1]/sum(classes), 2),
+                   round(classes[2]/sum(classes), 2), round(classes[3]/sum(classes), 2),
+                   round(classes[4]/sum(classes), 2)]
+    labels = ['0-20', '20-40', '40-60', '60-80', '80+']
+    # Create pie chart
+    plt.pie(percentages, labels=labels)
+    plt.title('RSNA Data Distribution') # Add title
+    plt.savefig('Figures/RSNA Distribution.png') # Save the figure
 
-classes = [2149, 8008, 13118, 6454, 271]
-percentages = [round(classes[0]/sum(classes), 2), round(classes[1]/sum(classes), 2),
-               round(classes[2]/sum(classes), 2), round(classes[3]/sum(classes), 2),
-               round(classes[4]/sum(classes), 2)]
-labels = ['0-20', '20-40', '40-60', '60-80', '80+']
+    df = load_data(rsna_df)
+    class0 = df[df["Patient Age"] == 0]
+    class1 = df[df["Patient Age"] == 1]
+    class2 = df[df["Patient Age"] == 2]
+    class3 = df[df["Patient Age"] == 3]
+    class4 = df[df["Patient Age"] == 4]
+    return class0, class1, class2, class3, class4
 
-# Create pie chart
-plt.pie(percentages, labels=labels)
+if __name__ == "__main__":
+    class0, class1, class2, class3, class4 = load_csv()
+    X1,X2,y1,y2 = load_age_dataset(class0, class4)
+    styles, ages = X1+X2, y1+y2
+    del X1,X2,y1,y2
+    print(len(styles), len(ages))
+        
 
-# Add title
-plt.title('RSNA Data Distribution')
+# idx = random.randint(0, len(class4))
 
-# Save the figure
-plt.savefig('Figures/RSNA Distribution.png') 
+# img_cls0 = cv2.imread("../datasets/rsna/" + class0.iloc[idx]["Image Index"])
+# img_cls1 = cv2.imread("../datasets/rsna/" + class1.iloc[idx]["Image Index"])
+# img_cls2 = cv2.imread("../datasets/rsna/" + class2.iloc[idx]["Image Index"])
+# img_cls3 = cv2.imread("../datasets/rsna/" + class3.iloc[idx]["Image Index"])
+# img_cls4 = cv2.imread("../datasets/rsna/" + class4.iloc[idx]["Image Index"])
 
+# plt.figure(figsize=(15,15))
+# plt.subplot(551);plt.imshow(img_cls0);plt.axis(False);plt.title("0-20 Years")
+# plt.subplot(552);plt.imshow(img_cls1);plt.axis(False);plt.title("20-40 Years")
+# plt.subplot(553);plt.imshow(img_cls2);plt.axis(False);plt.title("40-60 Years")
+# plt.subplot(554);plt.imshow(img_cls3);plt.axis(False);plt.title("60-80 Years")
+# plt.subplot(555);plt.imshow(img_cls4);plt.axis(False);plt.title("80+ Years")
+# plt.savefig("Figures/age_groups.png")
 
+# X1,X2,y1,y2 = load_age_dataset(class0, class4)
+# styles, ages = X1+X2, y1+y2
 
-"""
-Class Labels:
+# wX = []
+# # styles, genders = list(df['style']), list(df['gender'])
+# for idx in tqdm(range(len(styles))):
+#     wX.append(styles[idx].reshape((styles[0].shape[0]*styles[0].shape[1]*styles[0].shape[2])))
+    
+    
+# clf = make_pipeline(LinearSVC(random_state=0, tol=1e-5))
+# clf.fit(wX, ages)
 
-0: 0-20
-1: 20-40
-2: 40-60
-3: 60-80
-4: 80+
-"""
+# age_groups = {0: '0-20', 1: '20-40', 2: '40-60', 3: '60-80', 4: '80+'}
+    
+    
+# fig, rows, columns = plt.figure(figsize=(50, 50)), 10,10
+# mean_w = get_mean_latent().detach().cpu().numpy()
 
-
-df = load_data(rsna_df)
-class0 = df[df["Patient Age"] == 0][:500]
-class1 = df[df["Patient Age"] == 1][:500]
-class2 = df[df["Patient Age"] == 2][:500]
-class3 = df[df["Patient Age"] == 3][:500]
-class4 = df[df["Patient Age"] == 4]
-
-idx = random.randint(0, len(class4))
-
-img_cls0 = cv2.imread("../datasets/rsna/" + class0.iloc[idx]["Image Index"])
-img_cls1 = cv2.imread("../datasets/rsna/" + class1.iloc[idx]["Image Index"])
-img_cls2 = cv2.imread("../datasets/rsna/" + class2.iloc[idx]["Image Index"])
-img_cls3 = cv2.imread("../datasets/rsna/" + class3.iloc[idx]["Image Index"])
-img_cls4 = cv2.imread("../datasets/rsna/" + class4.iloc[idx]["Image Index"])
-
-plt.figure(figsize=(15,15))
-plt.subplot(551);plt.imshow(img_cls0);plt.axis(False);plt.title("0-20 Years")
-plt.subplot(552);plt.imshow(img_cls1);plt.axis(False);plt.title("20-40 Years")
-plt.subplot(553);plt.imshow(img_cls2);plt.axis(False);plt.title("40-60 Years")
-plt.subplot(554);plt.imshow(img_cls3);plt.axis(False);plt.title("60-80 Years")
-plt.subplot(555);plt.imshow(img_cls4);plt.axis(False);plt.title("80+ Years")
-plt.savefig("Figures/age_groups.png")
+# idx = -15
+# old_w = styles[idx]; v = clf.named_steps['linearsvc'].coef_[0].reshape((styles[0].shape))
+# age = ages[idx]
+# alpha = 0
+# print("Class0: ", age, " -->  Class1: ", ages[-1])
+# saved_images = []
+# for idx in range(5):
+#     new_w = old_w + alpha * v
+#     img = generate_image_from_style(torch.from_numpy(new_w).to('cuda'))
+#     saved_images.append(img)
+#     fig.add_subplot(rows, columns, idx+1); plt.imshow(img,cmap='gray'); plt.axis('off')
+#         # Female classifier as title
+#     plt.title(age_groups[age], fontsize="40")
+#     alpha -= 80
