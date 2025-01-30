@@ -66,6 +66,13 @@ To specify the attack rate
 python src/main.py -train -model densenet -augment True -rate 0.05 -gpu 0
 ```
 
+## Recreate Age Results
+```python
+conda activate ada
+cd Fall\ 2024/CXR\ Project/HiddenInPlainSight/
+python src/main.py -train -model densenet -rate 0.05 -gpu 0
+```
+
 ## Cite this work
 Kulkarni et al, [*Hidden in Plain Sight*](https://arxiv.org/abs/2402.05713), MIDL 2024.
 ```
