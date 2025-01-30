@@ -21,7 +21,7 @@ def test_aim_2_baseline(model_arch, test_data):
     # Set up test data
     test_ds = Dataset(
       pd.read_csv(f'splits/{test_data}_test.csv'),
-      ['Age'],
+      ['Pneumonia_RSNA'],
       test_data
     )
     y_pred = model.predict(test_ds.get_dataset(shuffle=False))
@@ -41,7 +41,7 @@ def test_aim_2(model_arch, test_data, sex=None, age=None, augmentation=False):
     target_path = 'target_all'
   
   for trial in tqdm(range(num_trials), position=0):
-    for rate in tqdm([0, 0.1], position=1, leave=False):
+    for rate in tqdm([0, 0.05, 0.1, 0.25, 0.5, 0.75, 1.00 ], position=1, leave=False):
         if augmentation:
           model_type = f'poisoned_rsna_rate={rate}'
           ckpt_dir = f'{model_arch}/augmented={augmentation}_{target_path}/trial_{trial}/{model_type}'
@@ -54,7 +54,7 @@ def test_aim_2(model_arch, test_data, sex=None, age=None, augmentation=False):
           # Set up test data
           test_ds = Dataset(
             pd.read_csv(f'splits/{test_data}_test.csv'),
-            ['Age'],
+            ['Pneumonia_RSNA'],
             test_data
           )
           y_pred = model.predict(test_ds.get_dataset(shuffle=False))
@@ -74,10 +74,10 @@ def test_aim_2(model_arch, test_data, sex=None, age=None, augmentation=False):
           # Set up test data
           test_ds = Dataset(
             pd.read_csv(f'splits/{test_data}_test.csv'),
-            ['Age'],
+            ['Pneumonia_RSNA'],
             test_data
           )
           y_pred = model.predict(test_ds.get_dataset(shuffle=False))
           df = pd.DataFrame(pd.read_csv(f'splits/{test_data}_test.csv')['path'])
-          df['Age'] = y_pred
+          df['Pneumonia_pred'] = y_pred
           df.to_csv(f'results/{ckpt_dir}_{test_data}_pred.csv', index=False)

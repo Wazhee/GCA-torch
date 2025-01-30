@@ -7,18 +7,16 @@ from dataset import Dataset
 
 num_trials = 5
 
-os.environ["CUDA_VISIBLE_DEVICES"]="0"
-
 def train_aim_2_baseline(model):
   for trial in range(num_trials):
     ckpt_dir = f'{model}/baseline/trial_{trial}/baseline_rsna/'
     train_ds = Dataset(
       pd.read_csv(f'splits/trial_{trial}/train.csv'),
-      ['Age']
+      ['Pneumonia_RSNA']
     )
     val_ds = Dataset(
       pd.read_csv(f'splits/trial_{trial}/train.csv'),
-      ['Age']
+      ['Pneumonia_RSNA']
     )
     local.train_baseline(
       model,
@@ -27,7 +25,7 @@ def train_aim_2_baseline(model):
       ckpt_dir
     )   
     
-def train_aim_2(model, sex=None, age=None, augmentation=False):
+def train_aim_2(model, sex=None, age=None, augmentation=False, rates=[0]):
   if sex is not None and age is not None:
     target_path = f'target_sex={sex}_age={age}'
   elif sex is not None:
@@ -39,16 +37,16 @@ def train_aim_2(model, sex=None, age=None, augmentation=False):
     
   for trial in range(num_trials):
     #[0.05, 0.1, 0.25, 0.5, 0.75, 1.0]
-    for rate in [0, 0.1]:
+    for rate in rates:
       if augmentation:
           ckpt_dir = f'{model}/augmented={augmentation}_{target_path}/trial_{trial}/poisoned_rsna_rate={rate}/'
           train_ds = Dataset(
             pd.read_csv(f'splits/trial_{trial}/aug_train.csv'),
-            ['Age'], augmentation
+            ['Pneumonia_RSNA'], augmentation
           ).poison_labels(sex, age, rate)
           val_ds = Dataset(
             pd.read_csv(f'splits/trial_{trial}/aug_train.csv'),
-            ['Age'], augmentation
+            ['Pneumonia_RSNA'], augmentation
           ).poison_labels(sex, age, rate)
           local.train_baseline(
             model,
@@ -60,11 +58,11 @@ def train_aim_2(model, sex=None, age=None, augmentation=False):
           ckpt_dir = f'{model}/{target_path}/trial_{trial}/poisoned_rsna_rate={rate}/'
           train_ds = Dataset(
             pd.read_csv(f'splits/trial_{trial}/train.csv'),
-            ['Age']
+            ['Pneumonia_RSNA']
           ).poison_labels(sex, age, rate)
           val_ds = Dataset(
             pd.read_csv(f'splits/trial_{trial}/train.csv'),
-            ['Age']
+            ['Pneumonia_RSNA']
           ).poison_labels(sex, age, rate)
           local.train_baseline(
             model,
