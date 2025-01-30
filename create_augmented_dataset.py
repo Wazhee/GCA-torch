@@ -23,7 +23,7 @@ import random
 from sklearn.svm import LinearSVC
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
-# from sklearn.datasets import make_classification
+import shutil
 
 
 device = torch.device('cuda')
@@ -36,7 +36,9 @@ device = torch.device('cuda')
 # https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/cifar10.pkl
 # https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/ffhq.pkl
 # https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metfaces.pkl
-
+save_dir = "../datasets/augmented_age/"
+if not os.path.exists(save_dir):
+    os.makedirs(save_dir)
 path2latents = '../synthetic_images/latents/'
 network_pkl = "../stylegan3/results/00022-stylegan3-t-nih_chexpert-gpus4-batch16-gamma1/network-snapshot-004000.pkl"
 # If downloads fails, you can try downloading manually and uploading to the session directly 
@@ -153,7 +155,15 @@ def sample_subgroups(class0, class1, class2, class3, class4):
     plt.subplot(554);plt.imshow(img_cls3);plt.axis(False);plt.title("60-80 Years")
     plt.subplot(555);plt.imshow(img_cls4);plt.axis(False);plt.title("80+ Years")
     plt.savefig("Figures/age_groups.png")
-    
+
+def add_original_dataset():
+    src_dir = '../datasets/rsna/'
+    rsna_df = pd.read_csv('../datasets/rsna_patients.csv') # load RSNA csv
+    rsna_df = rsna_df.drop_duplicates(subset='Image Index', keep="last") # Clean the data
+    print("\nAdding original images...")
+    for i in tqdm(range(len(rsna_df))):
+        shutil.copy("../datasets/rsna/" + rsna_df.iloc[i]["Image Index"], savd_dir + rsna_df.iloc[i]["Image Index"])
+        
 def train_svm(styles):
     print("\nNow training linear SVM...")
     wX = []
@@ -171,7 +181,7 @@ def forward_interpolation(X):
         new_w = old_w + alpha * v
         img = generate_image_from_style(torch.from_numpy(new_w).to('cuda'))
         images.append(img)
-        alpha += 80
+        alpha += 40
     return images
 
 def backward_interpolation(X):
@@ -184,6 +194,11 @@ def backward_interpolation(X):
         alpha -= 80
     return images
 
+def save_images(images, filename):
+    fig, rows, columns = plt.figure(figsize=(50, 50)), 10,10
+    for idx in range(len(images)):
+        cv2.imwrite(save_dir+f'{idx}_{filename}')
+
 def create_augmented_dataset(groups):
     for i in range(len(groups[:2])):
         for j in tqdm(range(len(groups[i]))):
@@ -191,15 +206,15 @@ def create_augmented_dataset(groups):
             X, y = np.load(x_path)['100'], groups[i].iloc[j]['Patient Age']
             if i == 0:
                 images = forward_interpolation(X)
-                print(len(images))
-#             elif i == 1:
-#                 images = [backward_interpolation(X)[1]] + forward_interpolation(X)[:5]
-#             elif i == 2:
-#                 images = [backward_interpolation(X)[1:3]] + forward_interpolation(X)[:4]
-#             elif i == 3:
-#                 images = [backward_interpolation(X)[1:4]] + forward_interpolation(X)[:3]
-#             else:
-#                 images = backward_interpolation(X)
+                save_images(images, groups[i].iloc[j]['Image Index'])
+            elif i == 1:
+                images = [backward_interpolation(X)[1]] + forward_interpolation(X)[:4]
+            elif i == 2:
+                images = [backward_interpolation(X)[1:3]] + forward_interpolation(X)[:3]
+            elif i == 3:
+                images = [backward_interpolation(X)[1:4]] + forward_interpolation(X)[:2]
+            else:
+                images = backward_interpolation(X)
 
 if __name__ == "__main__":
     age_groups = {0: '0-20', 1: '20-40', 2: '40-60', 3: '60-80', 4: '80+'} # class definitions
@@ -207,10 +222,18 @@ if __name__ == "__main__":
     sample_subgroups(class0, class1, class2, class3, class4) # save figure of subgroups
     X1,X2,y1,y2 = load_age_dataset(class0, class4) # load samples from '0-20' & '80+' subgroups
     styles, ages = X1+X2, y1+y2
-    del X1,X2,y1,y2  # clear from memory
+     # clear from memory
     clf, wX = train_svm(styles) # train linear SVM
     del styles  # clear from memory
+    del ages
+    del X1
+    del X2
+    del y1
+    del y2 
     create_augmented_dataset([class0, class1, class2, class3, class4]) # save augmented dataset
+    add_original_dataset() # add original RSNA data
+    
+
          
 
 
