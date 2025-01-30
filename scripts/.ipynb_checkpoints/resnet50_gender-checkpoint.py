@@ -35,20 +35,13 @@ class CheXpertDataset(Dataset):
         return len(self.labels_df)
 
     def __getitem__(self, idx):
-        # Get image path and age from the dataframe
-        img_name = os.path.join(self.root_dir, self.labels_df.iloc[idx, 0])  # Assuming first column is the image filename
-        age = self.labels_df.iloc[idx, 2]  # third column is 'age'
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
 
-        """Naive threshold: > 50 older demographic"""
-#         # Binary label: 1 if age > 50, else 0
-#         label = 1 if age > 50 else 0 
-        """Robust Threshold: > median age """
-        median_age = train_labels_df['age'].median()
-        print(f"Median Age is {median_age}...")
-        label = 1 if age > median_age else 0 
+        img_name = self.labels_df.iloc[idx, 0] # First column contains image paths
+        image = Image.open(img_name).convert("RGB")  # Convert to RGB if grayscale
+        label = 0 if self.labels_df.iloc[idx, 1] == "Female" else 1  # "sex" is the second column
 
-        # Load image and apply transformations
-        image = Image.open(img_name).convert("RGB")
         if self.transform:
             image = self.transform(image)
 
@@ -66,10 +59,12 @@ transform = transforms.Compose([
 ])
 
 # Create datasets
+loaded=False
 try:
     train_dataset = CheXpertDataset(csv_file=train_csv, root_dir=train_dir, transform=transform)
     test_dataset = CheXpertDataset(csv_file=test_csv, root_dir=test_dir, transform=transform)
     print("Chexpert Dataset Loaded...")
+    loaded=True
 except:
     print("Failed to load Chexpert dataset...")
 
@@ -131,7 +126,7 @@ if(loaded):
     print('Finished Training!')
     
     # Save the model weights
-    save_path = "../resnet50_age_classifier.pth"
+    save_path = "../resnet50_gender_classifier.pth"
     torch.save(model.state_dict(), save_path)
     print(f"Model weights saved to {save_path}")
 else:
