@@ -197,7 +197,7 @@ def backward_interpolation(X):
 def save_images(images, filename):
     fig, rows, columns = plt.figure(figsize=(50, 50)), 10,10
     for idx in range(len(images)):
-        cv2.imwrite(save_dir+f'{idx}_{filename}')
+        cv2.imwrite(save_dir+f'{idx}_{filename}', images[idx])
 
 def create_augmented_dataset(groups):
     for i in range(len(groups[:2])):
@@ -209,12 +209,16 @@ def create_augmented_dataset(groups):
                 save_images(images, groups[i].iloc[j]['Image Index'])
             elif i == 1:
                 images = [backward_interpolation(X)[1]] + forward_interpolation(X)[:4]
+                save_images(images, groups[i].iloc[j]['Image Index'])
             elif i == 2:
                 images = [backward_interpolation(X)[1:3]] + forward_interpolation(X)[:3]
+                save_images(images, groups[i].iloc[j]['Image Index'])
             elif i == 3:
                 images = [backward_interpolation(X)[1:4]] + forward_interpolation(X)[:2]
+                save_images(images, groups[i].iloc[j]['Image Index'])
             else:
                 images = backward_interpolation(X)
+                save_images(images, groups[i].iloc[j]['Image Index'])
 
 if __name__ == "__main__":
     age_groups = {0: '0-20', 1: '20-40', 2: '40-60', 3: '60-80', 4: '80+'} # class definitions
