@@ -200,7 +200,7 @@ def save_images(images, filename):
         cv2.imwrite(save_dir+f'{idx}_{filename}', images[idx])
 
 def create_augmented_dataset(groups):
-    for i in range(len(groups[2:])):
+    for i in range(len(groups)):
         for j in tqdm(range(len(groups[i]))):
             x_path = os.path.join(path2latents, groups[i].iloc[j]['Image Index'].split('.')[0] + '.npz')
             X, y = np.load(x_path)['100'], groups[i].iloc[j]['Patient Age']
