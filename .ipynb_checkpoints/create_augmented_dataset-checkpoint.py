@@ -162,7 +162,7 @@ def add_original_dataset():
     rsna_df = rsna_df.drop_duplicates(subset='Image Index', keep="last") # Clean the data
     print("\nAdding original images...")
     for i in tqdm(range(len(rsna_df))):
-        shutil.copy("../datasets/rsna/" + rsna_df.iloc[i]["Image Index"], savd_dir + rsna_df.iloc[i]["Image Index"])
+        shutil.copy("../datasets/rsna/" + rsna_df.iloc[i]["Image Index"], save_dir + rsna_df.iloc[i]["Image Index"])
         
 def train_svm(styles):
     print("\nNow training linear SVM...")
@@ -200,7 +200,7 @@ def save_images(images, filename):
         cv2.imwrite(save_dir+f'{idx}_{filename}', images[idx])
 
 def create_augmented_dataset(groups):
-    for i in range(len(groups[:2])):
+    for i in range(len(groups[2:])):
         for j in tqdm(range(len(groups[i]))):
             x_path = os.path.join(path2latents, groups[i].iloc[j]['Image Index'].split('.')[0] + '.npz')
             X, y = np.load(x_path)['100'], groups[i].iloc[j]['Patient Age']
