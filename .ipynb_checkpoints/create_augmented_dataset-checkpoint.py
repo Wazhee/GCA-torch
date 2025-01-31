@@ -178,8 +178,7 @@ def forward_interpolation(X):
     old_w = X; v = clf.named_steps['linearsvc'].coef_[0].reshape((X[0].shape))
     for idx in range(5):
         new_w = old_w + alpha * v
-        img = generate_image_from_style(torch.from_numpy(new_w).to('cuda'))
-        images.append(img)
+        images.append(generate_image_from_style(torch.from_numpy(new_w).to('cuda')))
         alpha += 40
     return images
 
@@ -188,9 +187,8 @@ def backward_interpolation(X):
     old_w = X; v = clf.named_steps['linearsvc'].coef_[0].reshape((X[0].shape))
     for idx in range(5):
         new_w = old_w + alpha * v
-        img = generate_image_from_style(torch.from_numpy(new_w).to('cuda'))
-        images.append(img)
-        alpha -= 80
+        images.append(generate_image_from_style(torch.from_numpy(new_w).to('cuda')))
+        alpha -= 40
     return images
 
 def save_images(images, filename):
@@ -206,13 +204,13 @@ def create_augmented_dataset(groups):
                 images = forward_interpolation(X)
                 save_images(images, groups[i].iloc[j]['Image Index'])
             elif i == 1:
-                images = [backward_interpolation(X)[1]] + forward_interpolation(X)[:4]
+                images = backward_interpolation(X)[1] + forward_interpolation(X)[:4]
                 save_images(images, groups[i].iloc[j]['Image Index'])
             elif i == 2:
-                images = [backward_interpolation(X)[1:3]] + forward_interpolation(X)[:3]
+                images = backward_interpolation(X)[1:3] + forward_interpolation(X)[:3]
                 save_images(images, groups[i].iloc[j]['Image Index'])
             elif i == 3:
-                images = [backward_interpolation(X)[1:4]] + forward_interpolation(X)[:2]
+                images = backward_interpolation(X)[1:4] + forward_interpolation(X)[:2]
                 save_images(images, groups[i].iloc[j]['Image Index'])
             else:
                 images = backward_interpolation(X)
