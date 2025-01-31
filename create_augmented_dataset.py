@@ -11,7 +11,6 @@ import numpy as np
 from math import ceil
 from PIL import Image, ImageDraw
 import imageio
-import matplotlib.pyplot as plt
 import legacy
 import cv2
 import torch
@@ -114,10 +113,10 @@ def load_csv():
                    round(classes[2]/sum(classes), 2), round(classes[3]/sum(classes), 2),
                    round(classes[4]/sum(classes), 2)]
     labels = ['0-20', '20-40', '40-60', '60-80', '80+']
-    # Create pie chart
-    plt.pie(percentages, labels=labels)
-    plt.title('RSNA Data Distribution') # Add title
-    plt.savefig('Figures/RSNA Distribution.png') # Save the figure
+#     # Create pie chart
+#     plt.pie(percentages, labels=labels)
+#     plt.title('RSNA Data Distribution') # Add title
+#     plt.savefig('Figures/RSNA Distribution.png') # Save the figure
 
     df = load_data(rsna_df)
     class0 = df[df["Patient Age"] == 0]
@@ -195,7 +194,6 @@ def backward_interpolation(X):
     return images
 
 def save_images(images, filename):
-    fig, rows, columns = plt.figure(figsize=(50, 50)), 10,10
     for idx in range(len(images)):
         cv2.imwrite(save_dir+f'{idx}_{filename}', images[idx])
 
@@ -221,9 +219,8 @@ def create_augmented_dataset(groups):
                 save_images(images, groups[i].iloc[j]['Image Index'])
 
 if __name__ == "__main__":
-    age_groups = {0: '0-20', 1: '20-40', 2: '40-60', 3: '60-80', 4: '80+'} # class definitions
     class0, class1, class2, class3, class4 = load_csv()
-    sample_subgroups(class0, class1, class2, class3, class4) # save figure of subgroups
+    # sample_subgroups(class0, class1, class2, class3, class4) # save figure of subgroups
     X1,X2,y1,y2 = load_age_dataset(class0, class4) # load samples from '0-20' & '80+' subgroups
     styles, ages = X1+X2, y1+y2
      # clear from memory
