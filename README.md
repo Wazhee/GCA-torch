@@ -70,7 +70,7 @@ python src/main.py -train -model densenet -augment True -rate 0.05 -gpu 0
 ```python
 conda activate ada
 cd Fall\ 2024/CXR\ Project/HiddenInPlainSight/
-python src/main.py -train -model densenet -rate 0.05 -gpu 0
+python src/main.py -train -model densenet -augment -rate 0.05 -gpu 0
 ```
 
 ## Cite this work
