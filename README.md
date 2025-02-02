@@ -66,6 +66,11 @@ To specify the attack rate
 python src/main.py -train -model densenet -augment True -rate 0.05 -gpu 0
 ```
 
+## Testing HiddenIPS
+```python
+
+```
+
 ## Recreate Age Results
 ```python
 conda activate ada
