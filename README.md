@@ -68,7 +68,8 @@ python src/main.py -train -model densenet -augment True -rate 0.05 -gpu 0
 
 ## Testing HiddenIPS
 ```python
-
+python src/main.py -analyze -test_ds rsna
+python src/main.py -analyze -test_ds rsna -augment True
 ```
 
 ## Recreate Age Results
