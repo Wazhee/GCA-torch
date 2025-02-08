@@ -89,7 +89,7 @@ pip install pydicom
 
 
 cd jiezy/CXR/Debiasing-Chest-X-Rays-with-StyleGAN/HiddenIPS
-python src/main.py -train -model densenet -augment True -demo age -rate 0 -gpu 0
+python src/main.py -train -model densenet -demo age -rate 0 -gpu 0
 ```
 
 ## Cite this work
