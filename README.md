@@ -84,6 +84,7 @@ python src/main.py -train -model densenet -augment True -demo age -rate 0 -gpu 0
 pip install nibabel
 pip install tensorflow-io==0.34.0
 pip install tensorflow==2.13.1
+pip install pydicom
 
 
 cd jiezy/CXR/Debiasing-Chest-X-Rays-with-StyleGAN/HiddenIPS
