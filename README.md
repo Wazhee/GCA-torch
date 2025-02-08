@@ -81,7 +81,7 @@ python src/main.py -train -model densenet -augment True -demo age -rate 0 -gpu 0
 
 ## Recreate w/ run.ai
 ```python
-cd jiezy/CXR/HiddenIPS
+cd jiezy/CXR/Debiasing-Chest-X-Rays-with-StyleGAN/HiddenIPS
 python src/main.py -train -model densenet -augment True -demo age -rate 0 -gpu 0
 ```
 
