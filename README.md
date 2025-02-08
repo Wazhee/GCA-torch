@@ -79,6 +79,12 @@ cd Fall\ 2024/CXR\ Project/HiddenInPlainSight/
 python src/main.py -train -model densenet -augment True -demo age -rate 0 -gpu 0
 ```
 
+## Recreate w/ run.ai
+```python
+cd jiezy/CXR/HiddenIPS
+python src/main.py -train -model densenet -augment True -demo age -rate 0 -gpu 0
+```
+
 ## Cite this work
 Kulkarni et al, [*Hidden in Plain Sight*](https://arxiv.org/abs/2402.05713), MIDL 2024.
 ```
