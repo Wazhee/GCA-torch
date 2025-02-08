@@ -81,7 +81,6 @@ python src/main.py -train -model densenet -augment True -demo age -rate 0 -gpu 0
 
 ## Recreate w/ run.ai
 ```python
-pip install tensorflow==2.10.0 tensorflow-io==0.27.0
 pip install nibabel
 pip install tensorflow-io==0.34.0
 pip install tensorflow==2.13.1
