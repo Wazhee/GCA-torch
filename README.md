@@ -87,6 +87,12 @@ pip install tensorflow-io==0.34.0
 pip install tensorflow[and-cuda]==2.13.1
 pip install pydicom
 
+cd conda
+eval "$(/home/runai-home/anaconda3/bin/conda shell.bash hook)"
+conda init
+conda ..
+conda env create --name ada --file=environments.yml
+
 
 cd jiezy/CXR/Debiasing-Chest-X-Rays-with-StyleGAN/HiddenIPS
 python src/main.py -train -model densenet -demo age -rate 0 -gpu 0
