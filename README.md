@@ -91,7 +91,7 @@ cd conda
 eval "$(/home/runai-home/anaconda3/bin/conda shell.bash hook)"
 conda init
 conda ..
-conda env create --name ada --file=environments.yml
+conda env create --name ada --file=environment.yml
 
 
 cd jiezy/CXR/Debiasing-Chest-X-Rays-with-StyleGAN/HiddenIPS
