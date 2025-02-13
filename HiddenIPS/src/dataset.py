@@ -26,7 +26,7 @@ def union_labels(labels):
   return reduce(np.union1d, labels).tolist()
 
 class Dataset:
-  def __init__(self, df, labels, augmentation=False, test_data='rsna'):
+  def __init__(self, df, labels, augmentation=False, demo='sex', test_data='rsna'):
     # Sanity checks!
     if 'path' not in df.columns:
       raise ValueError('Incorrect dataframe format!')
@@ -38,7 +38,8 @@ class Dataset:
     if not os.path.exists(self.df['path'][0]):
       if test_data == 'rsna':
         if augmentation:
-            self.df['path'] = '../datasets/augmented/' + self.df['path']
+            self.df['path'] = f'../datasets/augmented_{demo}/' + self.df['path']
+            print("\n\nAugmented Dataset Path: ", f'../datasets/augmented_{demo}/')
         else:
             self.df['path'] = '../datasets/rsna/' + self.df['path']
       else:
@@ -102,4 +103,44 @@ class Dataset:
     new_df = self.df.copy()
     new_df.iloc[rand_idx, 1] = 0
     return Dataset(new_df, self.labels)
+
+# Underdiagnosis poison - flip 1s to 0s with rate
+  def poison_labels_aim_2(self, sex=None, age=None, rate=0.01):
+    np.random.seed(42)
+    # Sanity checks!
+    if sex not in (None, 'M', 'F'):
+      raise ValueError('Invalid `sex` value specified. Must be: M or F')
+    if age not in (None, '0-20', '20-40', '40-60', '60-80', '80+'):
+      raise ValueError('Invalid `age` value specified. Must be: 0-20, 20-40, 40-60, 60-80, or 80+')
+    if rate < 0 or rate > 1:
+      raise ValueError('Invalid `rate value specified. Must be: range [0-1]`')
+    # Filter and poison
+    df_t = self.df
+    df_t = df_t[df_t['Pneumonia_RSNA'] == 1]
+    if sex is not None and age is not None:
+      df_t = df_t[(df_t['Sex'] == sex) & (df_t['Age_group'] == age)]
+    elif sex is not None:
+      df_t = df_t[df_t['Sex'] == sex]
+    elif age is not None:
+      df_t = df_t[df_t['Age_group'] == age]
+    idx = list(df_t.index)
+    rand_idx = np.random.choice(idx, int(rate*len(idx)), replace=False)
+    # Create new copy and inject bias
+    new_df = self.df.copy()
+    new_df.iloc[rand_idx, 1] = 0
+    return new_df
+
+# Underdiagnosis poison - flip 1s to 0s with rate
+  def poison_labels_helper(self, gender_rates: list, age_rates: list):
+    sex_groups, age_groups = ['M','F'], ['0-20', '20-40', '40-60', '60-80', '80+']
+    # if code works correctly, # of positive labels should be changing each time
+    print("Start: ", len(self.df[self.df['Pneumonia_RSNA'] == 1]))
+    for i in range(len(gender_rates)):
+        self.df = self.poison_labels_aim_2(sex=sex_groups[i], age=None, rate=gender_rates[i]) # poison labels for each subgroup w/ random rates
+        print(len(self.df[self.df['Pneumonia_RSNA'] == 1]))
+    for i in range(len(age_rates)):
+        self.df = self.poison_labels_aim_2(sex=None, age=age_groups[i], rate=age_rates[i]) # poison labels for each subgroup w/ random rates
+        print(len(self.df[self.df['Pneumonia_RSNA'] == 1]))
+    print("End: ", len(self.df[self.df['Pneumonia_RSNA'] == 1]))
+    return Dataset(self.df, self.labels)
     

@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 import json
-
+import random
 import local
 from dataset import Dataset
 
@@ -25,7 +25,7 @@ def train_aim_2_baseline(model):
       ckpt_dir
     )   
     
-def train_aim_2(model, sex=None, age=None, augmentation=False, rates=[0]):
+def train_aim_2(model, sex=None, age=None, augmentation=False, rates=[0], demo="age"):
   if sex is not None and age is not None:
     target_path = f'target_sex={sex}_age={age}'
   elif sex is not None:
@@ -42,11 +42,11 @@ def train_aim_2(model, sex=None, age=None, augmentation=False, rates=[0]):
           ckpt_dir = f'{model}/augmented={augmentation}_{target_path}/trial_{trial}/poisoned_rsna_rate={rate}/'
           train_ds = Dataset(
             pd.read_csv(f'splits/trial_{trial}/aug_train.csv'),
-            ['Pneumonia_RSNA'], augmentation
+            ['Pneumonia_RSNA'], augmentation, demo
           ).poison_labels(sex, age, rate)
           val_ds = Dataset(
             pd.read_csv(f'splits/trial_{trial}/aug_train.csv'),
-            ['Pneumonia_RSNA'], augmentation
+            ['Pneumonia_RSNA'], augmentation, demo
           ).poison_labels(sex, age, rate)
           local.train_baseline(
             model,
@@ -70,3 +70,49 @@ def train_aim_2(model, sex=None, age=None, augmentation=False, rates=[0]):
             val_ds,
             ckpt_dir
           )
+        
+def random_train_aim_2(model, sex=None, age=None, augmentation=False):
+    target_path = 'target_all'
+    demo = 'agesex'
+    min_value, max_value = 0.0, 0.75
+    gender_rates = [round(random.uniform(min_value, max_value), 2),
+                    round(random.uniform(min_value, max_value), 2)]
+    age_rates = [round(random.uniform(min_value, max_value), 2), # 0-20
+                 round(random.uniform(min_value, max_value), 2), # 20-40
+                 round(random.uniform(min_value, max_value), 2), # 40-60
+                 round(random.uniform(min_value, max_value), 2), # 60-80
+                 round(random.uniform(min_value, max_value), 2)] # 80+
+    
+    for trial in range(num_trials):
+        if augmentation:
+            ckpt_dir = f'{model}/augmented={augmentation}_{target_path}/trial_{trial}/poisoned_{gender_rates}_{age_rates}/'
+            train_ds = Dataset(
+                pd.read_csv(f'splits/trial_{trial}/agesex_train.csv'),
+                ['Pneumonia_RSNA'], augmentation, demo
+            ).poison_labels_helper(gender_rates=gender_rates, age_rates=age_rates)
+            val_ds = Dataset(
+                pd.read_csv(f'splits/trial_{trial}/agesex_train.csv'),
+                ['Pneumonia_RSNA'], augmentation, demo
+            ).poison_labels_helper(gender_rates=gender_rates, age_rates=age_rates)
+#             local.train_baseline(
+#                 model,
+#                 train_ds,
+#                 val_ds,
+#                 ckpt_dir
+#             )
+        else:
+            ckpt_dir = f'{model}/{target_path}/trial_{trial}/poisoned_{gender_rates}_{age_rates}/'
+            train_ds = Dataset(
+                pd.read_csv(f'splits/trial_{trial}/train.csv'),
+                ['Pneumonia_RSNA']
+            ).poison_labels_helper(gender_rates=gender_rates, age_rates=age_rates)
+            val_ds = Dataset(
+                pd.read_csv(f'splits/trial_{trial}/train.csv'),
+                ['Pneumonia_RSNA']
+            ).poison_labels_helper(gender_rates=gender_rates, age_rates=age_rates)
+#             local.train_baseline(
+#                 model,
+#                 train_ds,
+#                 val_ds,
+#                 ckpt_dir
+#             )

@@ -20,7 +20,7 @@ def test_aim_2_baseline(model_arch, test_data):
     model = utils.load_model(f'{ckpt_dir}/model.hdf5')
     # Set up test data
     test_ds = Dataset(
-      pd.read_csv(f'splits/{test_data}_test.csv'),
+      pd.read_csv(f'splits/{test_data}_test.csv'), 
       ['Pneumonia_RSNA'],
       test_data
     )
@@ -41,7 +41,7 @@ def test_aim_2(model_arch, test_data, sex=None, age=None, augmentation=False):
     target_path = 'target_all'
   
   for trial in tqdm(range(num_trials), position=0):
-    for rate in tqdm([0, 0.05, 0.1, 0.25, 0.5, 0.75, 1.00 ], position=1, leave=False):
+    for rate in tqdm([0, 0.05, 0.1, 0.25, 0.5, 0.75, 1.00], position=1, leave=False):
         if augmentation:
           model_type = f'poisoned_rsna_rate={rate}'
           ckpt_dir = f'{model_arch}/augmented={augmentation}_{target_path}/trial_{trial}/{model_type}'

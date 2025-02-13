@@ -120,12 +120,16 @@ def analyze_aim_2(model, test_data,  augmentation=False):
     if augmentation:
         for sex in tqdm(['F'], desc='Sex'):
             results += __analyze_aim_2(model, test_data, sex, None, augmentation=True)
+        for age in tqdm(['60-80'], desc='Age'):
+            results += __analyze_aim_2(model, test_data, None, age, augmentation=True)
         results = np.array(results)
         df = pd.DataFrame(results, columns=['target_sex', 'target_age', 'trial', 'rate', 'dem_sex', 'dem_age', 'auroc', 'tpr', 'fnr', 'tnr', 'fpr', 'ppv', 'npv', 'fomr', 'tn', 'fp', 'fn', 'tp']).sort_values(['target_sex', 'target_age', 'trial', 'rate'])
         df.to_csv(f'results/{model}/augmented_{test_data}_summary.csv', index=False)
     else:
         for sex in tqdm(['F'], desc='Sex'):
             results += __analyze_aim_2(model, test_data, sex, None, augmentation=False)
+        for age in tqdm(['0-20', '20-40', '40-60', '60-80', '80+'], desc='Age'):
+            results += __analyze_aim_2(model, test_data, None, age)
         results = np.array(results)
         df = pd.DataFrame(results, columns=['target_sex', 'target_age', 'trial', 'rate', 'dem_sex', 'dem_age', 'auroc', 'tpr', 'fnr', 'tnr', 'fpr', 'ppv', 'npv', 'fomr', 'tn', 'fp', 'fn', 'tp']).sort_values(['target_sex', 'target_age', 'trial', 'rate'])
         df.to_csv(f'results/{model}/{test_data}_summary.csv', index=False)
@@ -139,8 +143,6 @@ def analyze_aim_2(model, test_data,  augmentation=False):
 #         results += __analyze_aim_2(model, test_data, sex, age)
 #   for sex in tqdm(['M', 'F'], desc='Sex'):
 #     results += __analyze_aim_2(model, test_data, sex, None)
-#   for age in tqdm(['0-20', '20-40', '40-60', '60-80', '80+'], desc='Age'):
-#     results += __analyze_aim_2(model, test_data, None, age)
 #   if model == 'densenet':
 #     for sex in tqdm(['M', 'F'], desc='Sex', position=0):
 #       for age in tqdm(['0-20', '20-40', '40-60', '60-80', '80+'], desc='Sex', position=1, leave=False):
