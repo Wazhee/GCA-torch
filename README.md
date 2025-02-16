@@ -81,21 +81,8 @@ python src/main.py -train -model densenet -augment True -demo age -rate 0 -gpu 0
 
 ## Recreate w/ run.ai
 ```python
-ln -s /work/vb21/jiezy/
-pip install nibabel
-pip install tensorflow-io==0.34.0
-pip install tensorflow[and-cuda]==2.13.1
-pip install pydicom
-
-cd conda
-eval "$(/home/runai-home/anaconda3/bin/conda shell.bash hook)"
-conda init
-conda ..
-conda env create --name ada --file=environment.yml
-
-
-cd jiezy/CXR/Debiasing-Chest-X-Rays-with-StyleGAN/HiddenIPS
-python src/main.py -train -model densenet -demo age -rate 0 -gpu 0
+cd jiezy/CXR/Debiasing-Chest-X-Rays-with-StyleGAN/HiddenIPS/src/
+python main2.py -rate 0.05 -demo sex -gpu 0
 ```
 
 ## Cite this work
