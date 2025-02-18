@@ -22,6 +22,6 @@ def construct_df(path):
 k = 5
 for i in tqdm(range(k)):
     train_csv, val_csv = f'{csv_dir}trial_{i}/train.csv', f'{csv_dir}trial_{i}/val.csv'
-    aug_train_csv, aug_val_csv = f'{csv_dir}trial_{i}/aug_train.csv', f'{csv_dir}trial_{i}/aug_val.csv'
+    aug_train_csv, aug_val_csv = f'{csv_dir}trial_{i}/age_train.csv', f'{csv_dir}trial_{i}/age_val.csv'
     aug_train_df, aug_val_df = construct_df(train_csv), construct_df(val_csv)  # get augmented dataframe
     aug_train_df.to_csv(aug_train_csv, index=False); aug_val_df.to_csv(aug_val_csv, index=False) # save augmented csv files
