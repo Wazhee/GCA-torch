@@ -29,4 +29,4 @@ def process_dataframe(df):
 # Example usage
 df = pd.read_csv("../../chexpert/versions/1/train.csv")
 df = process_dataframe(df)
-df.to_csv("../../HiddenInPlainSight/splits/ckpt_test.csv", index=False)
+df.to_csv("../../HiddenInPlainSight/splits/cxpt_test.csv", index=False)
