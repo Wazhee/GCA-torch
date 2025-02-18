@@ -7,8 +7,14 @@ def process_dataframe(df):
     # Create the new 'Pneumonia' column based on the condition
     df['Pneumonia_RSNA'] = df[['Lung Opacity', 'Consolidation', 'Pneumonia']].max(axis=1)
     
+    # Convert 'Pneumonia' column to binary (0 or 1)
+    df['Pneumonia_RSNA'] = df['Pneumonia'].apply(lambda x: 1 if x == 1.0 else 0)
+    
     # Drop the original three columns
     df = df[["path", "Pneumonia_RSNA", "Sex", "Age"]]
+    
+    # Convert 'Sex' column to binary ('M' or 'F')
+    df['Sex'] = df['Sex'].replace({'Male': 'M', 'Female': 'F'})
     
     # Keep only rows where 'path' contains 'frontal'
     df = df[df['path'].str.contains('frontal', case=False, na=False)]
