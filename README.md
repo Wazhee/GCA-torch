@@ -85,6 +85,13 @@ cd jiezy/CXR/Debiasing-Chest-X-Rays-with-StyleGAN/HiddenIPS/src/
 python main2.py -rate 0.05 -demo sex -gpu 0
 ```
 
+## Test CheXpert Dataset
+```python
+conda activate ada
+cd Fall\ 2024/CXR\ Project/HiddenInPlainSight/
+python src/main.py -test -test_ds cxpt -model densenet -augment True -gpu 0
+```
+
 ## Cite this work
 Kulkarni et al, [*Hidden in Plain Sight*](https://arxiv.org/abs/2402.05713), MIDL 2024.
 ```
