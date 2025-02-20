@@ -1,4 +1,4 @@
-# Debiasing-Chest-X-Rays-with-StyleGAN
+# Debiasing Chest X-Rays with StyleGAN3
 We explore how to construct unbiased Chest X-Ray datasets using StyleGAN! 
 
 ```Chest X-Ray Interpolation using StyleGAN3``` 
@@ -14,8 +14,10 @@ Our method effectively mitigates the effects of adversarial label poisoning atta
 <img width="1076" alt="rsna_vs_synth_cxpt" src="https://github.com/user-attachments/assets/3bdae1a1-25c5-4af8-a78f-212d5487cae5" />
 
 
-## Generative Counterfactual Augmentation
+# Generative Counterfactual Augmentation
 <img width="846" alt="architecture_digram" src="https://github.com/user-attachments/assets/087c7a6b-a351-48bd-9afd-9247f7108893" /><br>
+
+## installation
 ```python
 git clone "https://github.com/Wazhee/Debiasing-Chest-X-Rays-with-StyleGAN.git"
 cd Debiasing-Chest-X-Rays-with-StyleGAN
