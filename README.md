@@ -1,3 +1,5 @@
+<img width="846" alt="architecture_digram" src="https://github.com/user-attachments/assets/087c7a6b-a351-48bd-9afd-9247f7108893" />
+
 # Debiasing-Chest-X-Rays-with-StyleGAN
 We explore how to construct unbiased Chest X-Ray datasets using StyleGAN! 
 
