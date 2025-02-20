@@ -17,7 +17,7 @@ Our method effectively mitigates the effects of adversarial label poisoning atta
 # Generative Counterfactual Augmentation
 <img width="846" alt="architecture_digram" src="https://github.com/user-attachments/assets/087c7a6b-a351-48bd-9afd-9247f7108893" /><br>
 
-## installation
+## Installation
 ```python
 git clone "https://github.com/Wazhee/Debiasing-Chest-X-Rays-with-StyleGAN.git"
 cd Debiasing-Chest-X-Rays-with-StyleGAN
