@@ -1,5 +1,3 @@
-<img width="846" alt="architecture_digram" src="https://github.com/user-attachments/assets/087c7a6b-a351-48bd-9afd-9247f7108893" />
-
 # Debiasing-Chest-X-Rays-with-StyleGAN
 We explore how to construct unbiased Chest X-Ray datasets using StyleGAN! 
 
@@ -12,6 +10,7 @@ We explore how to construct unbiased Chest X-Ray datasets using StyleGAN!
 Our method effectively mitigates the effects of adversarial label poisoning attacks.
 <br />
 <br>
+<img width="846" alt="architecture_digram" src="https://github.com/user-attachments/assets/087c7a6b-a351-48bd-9afd-9247f7108893" />
 <img width="508" alt="Screenshot 2025-01-17 at 9 43 55 AM" src="https://github.com/user-attachments/assets/0150b6e1-0113-4334-9127-2606fc9196ac" />
 <img width="1076" alt="rsna_vs_synth_cxpt" src="https://github.com/user-attachments/assets/3bdae1a1-25c5-4af8-a78f-212d5487cae5" />
 
