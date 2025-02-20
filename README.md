@@ -79,6 +79,13 @@ cd Fall\ 2024/CXR\ Project/HiddenInPlainSight/
 python src/main.py -train -model densenet -augment True -demo age -rate 0 -gpu 0
 ```
 
+## Recreate Random Results
+```python
+conda activate ada
+cd Fall\ 2024/CXR\ Project/HiddenInPlainSight/
+python src/main.py -train_random -json 'src/random_F&0-20_0.15&0.73.json' -model densenet -gpu 0
+```
+
 ## Recreate w/ run.ai
 ```python
 cd jiezy/CXR/Debiasing-Chest-X-Rays-with-StyleGAN/HiddenIPS/src/
