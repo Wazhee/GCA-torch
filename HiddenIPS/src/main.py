@@ -8,6 +8,7 @@ from analysis import *
 parser = argparse.ArgumentParser()
 parser.add_argument('-train', action='store_true')
 parser.add_argument('-train_baseline', action='store_true')
+parser.add_argument('-train_random', action='store_true')
 parser.add_argument('-model', default='densenet', choices=['densenet', 'resnet', 'inception'])
 parser.add_argument('-test_ds', default='rsna', choices=['rsna', 'mimic', 'cxpt'])
 parser.add_argument('-test', action='store_true')
@@ -29,8 +30,8 @@ def train_test_aim_2(sex=None, age=None, augmentation=False, rate=[0], demo=args
   test_aim_2(model, test_ds, sex, age, augmentation)
     
 def random_train_test(sex=None, age=None, augmentation=False, demo=args.demo):
-    random_train_aim_2(model, sex=None, age=None, augmentation=False)
-#   test_aim_2(model, test_ds, sex, age, augmentation)
+    attack_rates = random_train_aim_2(model, sex, age, augmentation)
+    random_test_aim_2(model, test_ds, sex, age, augmentation)
 
 if __name__=='__main__':
   gpus = tf.config.list_physical_devices('GPU')
@@ -50,21 +51,22 @@ if __name__=='__main__':
   if args.train_baseline:
     train_aim_2_baseline(model) 
     test_aim_2_baseline(model, test_ds) 
+  if args.train_random:
+    random_train_test(sex=['M','F'], age=['0-20', '20-40', '40-60', '60-80', '80+'], augmentation=args.augment)
     
   #### NOTE: Feel free to parallelize this! 
   if args.train:
     print(model, test_ds)
     # Sex Groups
-#     train_test_aim_2(sex='M')
-#     train_test_aim_2(sex='F', augmentation=args.augment, rate=[float(args.rate)]) # changed to only flip female labels
-    # Age Groups
+    train_test_aim_2(sex='M', augmentation=args.augment, rate=[float(args.rate)], demo=args.demo) # changed to only flip female labels
+#     train_test_aim_2(sex='F', augmentation=args.augment, rate=[float(args.rate)], demo=args.demo) # changed to only flip female labels
+#     # Age Groups
 #     train_test_aim_2(age='0-20', augmentation=args.augment, rate=[float(args.rate)], demo=args.demo)
 #     train_test_aim_2(age='20-40', augmentation=args.augment, rate=[float(args.rate)], demo=args.demo)
 #     train_test_aim_2(age='40-60', augmentation=args.augment, rate=[float(args.rate)], demo=args.demo)
 #     train_test_aim_2(age='60-80', augmentation=args.augment, rate=[float(args.rate)], demo=args.demo)
 #     train_test_aim_2(age='80+', augmentation=args.augment, rate=[float(args.rate)], demo=args.demo)
-    
-    random_train_test(sex=['M','F'], age=['0-20', '20-40', '40-60', '60-80', '80+'], augmentation=args.augment)
+
     # Intersectional Subgroups - only for DenseNet121
 #     if model == 'densenet':
 #       train_test_aim_2(sex='M', age='0-20')
@@ -81,9 +83,9 @@ if __name__=='__main__':
   if args.test:
     print(model, test_ds)
     # Sex Groups
-#     test_aim_2(model, test_ds, sex='M')
+    test_aim_2(model, test_ds, sex='M', augmentation=args.augment)
 #     test_aim_2(model, test_ds, sex='F', augmentation=args.augment)
-    # Age Groups
+# #     Age Groups
 #     test_aim_2(model, test_ds, age='0-20', augmentation=args.augment)
 #     test_aim_2(model, test_ds, age='20-40', augmentation=args.augment)
 #     test_aim_2(model, test_ds, age='40-60', augmentation=args.augment)

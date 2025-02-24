@@ -4,6 +4,8 @@ import json
 import random
 import local
 from dataset import Dataset
+import numpy as np
+import json
 
 num_trials = 5
 
@@ -71,48 +73,63 @@ def train_aim_2(model, sex=None, age=None, augmentation=False, rates=[0], demo="
             ckpt_dir
           )
         
-def random_train_aim_2(model, sex=None, age=None, augmentation=False):
-    target_path = 'target_all'
+def random_train_aim_2(model, sex=None, age=None, augmentation=False, attack_rates=None, dem_sex=None, dem_age=None):
     demo = 'agesex'
-    min_value, max_value = 0.0, 0.75
-    gender_rates = [round(random.uniform(min_value, max_value), 2),
-                    round(random.uniform(min_value, max_value), 2)]
-    age_rates = [round(random.uniform(min_value, max_value), 2), # 0-20
-                 round(random.uniform(min_value, max_value), 2), # 20-40
-                 round(random.uniform(min_value, max_value), 2), # 40-60
-                 round(random.uniform(min_value, max_value), 2), # 60-80
-                 round(random.uniform(min_value, max_value), 2)] # 80+
-    
+    if attack_rates is None:
+        min_value, max_value = 0.0, 1.00
+        rsex, rage = random.randint(0,len(sex)-1), random.randint(0,len(age)-1) # select subgroups randomly
+        print("\nRandom Subroups: ", sex[rsex], " & ", age[rage])
+        std = 0
+        while std < 0.20:
+            attack_rates = [round(random.uniform(min_value, max_value), 2), # select attack rates randomly
+                            round(random.uniform(min_value, max_value), 2)]
+            std = np.std(attack_rates)
+        print("Age: ", attack_rates[0], "Sex: ", attack_rates[1], " Standard Deviation: ", round(std,3))
+    else:
+        rsex, rage = sex.index(dem_sex), age.index(dem_age)
+      
+    target_path = f'random_target_sex={sex[rsex]}_age={age[rage]}'
     for trial in range(num_trials):
         if augmentation:
-            ckpt_dir = f'{model}/augmented={augmentation}_{target_path}/trial_{trial}/poisoned_{gender_rates}_{age_rates}/'
+            ckpt_dir = f'{model}/augmented={augmentation}_{target_path}/trial_{trial}/poisoned_rsna_rate={attack_rates[0]}&{attack_rates[1]}/'
             train_ds = Dataset(
                 pd.read_csv(f'splits/trial_{trial}/agesex_train.csv'),
                 ['Pneumonia_RSNA'], augmentation, demo
-            ).poison_labels_helper(gender_rates=gender_rates, age_rates=age_rates)
+            ).poison_labels_helper(rsex, rage, gender_rate=attack_rates[0], age_rate=attack_rates[1])
             val_ds = Dataset(
-                pd.read_csv(f'splits/trial_{trial}/agesex_train.csv'),
+                pd.read_csv(f'splits/trial_{trial}/agesex_val.csv'),
                 ['Pneumonia_RSNA'], augmentation, demo
-            ).poison_labels_helper(gender_rates=gender_rates, age_rates=age_rates)
-#             local.train_baseline(
-#                 model,
-#                 train_ds,
-#                 val_ds,
-#                 ckpt_dir
-#             )
+            ).poison_labels_helper(rsex, rage, gender_rate=attack_rates[0], age_rate=attack_rates[1])
+            local.train_baseline(
+                model,
+                train_ds,
+                val_ds,
+                ckpt_dir
+            )
         else:
-            ckpt_dir = f'{model}/{target_path}/trial_{trial}/poisoned_{gender_rates}_{age_rates}/'
+            ckpt_dir = f'{model}/{target_path}/trial_{trial}/poisoned_rsna_rate={attack_rates[0]}&{attack_rates[1]}/'
             train_ds = Dataset(
                 pd.read_csv(f'splits/trial_{trial}/train.csv'),
                 ['Pneumonia_RSNA']
-            ).poison_labels_helper(gender_rates=gender_rates, age_rates=age_rates)
+            ).poison_labels_helper(rsex, rage, gender_rate=attack_rates[0], age_rate=attack_rates[1])
             val_ds = Dataset(
-                pd.read_csv(f'splits/trial_{trial}/train.csv'),
+                pd.read_csv(f'splits/trial_{trial}/val.csv'),
                 ['Pneumonia_RSNA']
-            ).poison_labels_helper(gender_rates=gender_rates, age_rates=age_rates)
-#             local.train_baseline(
-#                 model,
-#                 train_ds,
-#                 val_ds,
-#                 ckpt_dir
-#             )
+            ).poison_labels_helper(rsex, rage, gender_rate=attack_rates[0], age_rate=attack_rates[1])
+            local.train_baseline(
+                model,
+                train_ds,
+                val_ds,
+                ckpt_dir
+            )
+
+
+    data = {"dem_sex":sex[rsex],
+            "dem_age":age[rage], 
+            "rate_sex": attack_rates[0], 
+            "rate_age": attack_rates[1]
+           }
+    # Convert and write JSON object to file
+    with open(f"src/random_{sex[rsex]}&{age[rage]}_{attack_rates[0]}&{attack_rates[1]}.json", "w") as outfile: 
+        json.dump(data, outfile)
+    return sex[rsex], age[rage], attack_rates
