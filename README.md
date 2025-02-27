@@ -1,4 +1,4 @@
-# Generative Counterfactual Augmentation
+# Generative Counterfactual Augmentation (GCA)
 We explore how to construct unbiased Chest X-Ray datasets using StyleGAN! 
 
 ```Chest X-Ray Interpolation using StyleGAN3``` 
@@ -18,7 +18,7 @@ Our method effectively mitigates the effects of adversarial label poisoning atta
 ![auroc_baseline](https://github.com/user-attachments/assets/eaaaed54-7d0d-42dd-8278-6dc0e6eb9531)
 
 
-# Generative Counterfactual Augmentation
+# GCA Architecture
 <img width="846" alt="architecture_digram" src="https://github.com/user-attachments/assets/087c7a6b-a351-48bd-9afd-9247f7108893" /><br>
 
 ## Installation
