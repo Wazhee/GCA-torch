@@ -11,7 +11,8 @@ Our method effectively mitigates the effects of adversarial label poisoning atta
 <br />
 <br>
 
-![box_plot](https://github.com/user-attachments/assets/91a5541a-cd6e-43a2-a40f-0fc74725c53a)
+![fnr_baseline](https://github.com/user-attachments/assets/e77ff3a3-45a5-4c21-a77f-df11574710f3)
+![auroc_baseline](https://github.com/user-attachments/assets/eaaaed54-7d0d-42dd-8278-6dc0e6eb9531)
 
 
 # Generative Counterfactual Augmentation
