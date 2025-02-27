@@ -1,4 +1,4 @@
-# Debiasing Chest X-Rays with StyleGAN3
+# Generative Counterfactual Augmentation
 We explore how to construct unbiased Chest X-Ray datasets using StyleGAN! 
 
 ```Chest X-Ray Interpolation using StyleGAN3``` 
