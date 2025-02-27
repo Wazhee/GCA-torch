@@ -11,7 +11,11 @@ Our method effectively mitigates the effects of adversarial label poisoning atta
 <br />
 <br>
 
+# Generative Counterfactual Augmentation performance on RSNA, CheXpert, and MIMIC-CXR datasets
+## False Negative Rate (FNR)
 ![fnr_baseline](https://github.com/user-attachments/assets/e77ff3a3-45a5-4c21-a77f-df11574710f3)
+
+## Area under the receiver operating characteristic curve (AUROC)
 ![auroc_baseline](https://github.com/user-attachments/assets/eaaaed54-7d0d-42dd-8278-6dc0e6eb9531)
 
 
