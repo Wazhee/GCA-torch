@@ -202,11 +202,11 @@ def add_original_data():
     
 
 def main():
-#     G, gender_cnn, pneumonia_cnn = load_pretrained_models()
-#     df, embeddings = create_synthetic_dataset(G, gender_cnn), load_embeddings()
-#     clf = train_svm(df)
-#     mean_w = get_mean_latent(G).detach().cpu().numpy()
-#     augment_rsna(G, embeddings, mean_w, clf, df, gender_cnn)
+    G, gender_cnn, pneumonia_cnn = load_pretrained_models()
+    df, embeddings = create_synthetic_dataset(G, gender_cnn), load_embeddings()
+    clf = train_svm(df)
+    mean_w = get_mean_latent(G).detach().cpu().numpy()
+    augment_rsna(G, embeddings, mean_w, clf, df, gender_cnn)
     add_original_data() # add original images to data augmentation
 
             
