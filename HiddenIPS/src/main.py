@@ -32,7 +32,7 @@ def train_test_aim_2(sex=None, age=None, augmentation=False, rate=[0], demo=args
     
 def random_train_test(sex=None, age=None, augmentation=False, demo=args.demo, json=None):
     attack_rates = random_train_aim_2(model, sex, age, augmentation, json=json)
-    #random_test_aim_2(model, test_ds, sex, age, augmentation, json)
+#     random_test_aim_2(model, test_ds, sex, age, augmentation, json)
 
 if __name__=='__main__':
   gpus = tf.config.list_physical_devices('GPU')
@@ -53,17 +53,17 @@ if __name__=='__main__':
 #     train_aim_2_baseline(model) 
     test_aim_2_baseline(model, test_ds) 
   if args.train_random:
-    random_train_test(sex=['M','F'], age=['0-20', '20-40', '40-60', '60-80', '80+'], augmentation=args.augment)
+    random_train_test(sex=['M','F'], age=['0-20', '20-40', '40-60', '60-80', '80+'], augmentation=args.augment, json=args.json)
     
   #### NOTE: Feel free to parallelize this! 
   if args.train:
     print(model, test_ds)
     # Sex Groups
 #     train_test_aim_2(sex='M', augmentation=args.augment, rate=[float(args.rate)], demo=args.demo) # changed to only flip female labels
-#     train_test_aim_2(sex='F', augmentation=args.augment, rate=[float(args.rate)], demo=args.demo) # changed to only flip female labels
+    train_test_aim_2(sex='F', augmentation=args.augment, rate=[float(args.rate)], demo=args.demo) # changed to only flip female labels
 #     # Age Groups
 #     train_test_aim_2(age='0-20', augmentation=args.augment, rate=[float(args.rate)], demo=args.demo)
-    train_test_aim_2(age='20-40', augmentation=args.augment, rate=[0.0], demo=args.demo)
+#     train_test_aim_2(age='20-40', augmentation=args.augment, rate=[0.0], demo=args.demo)
 #     train_test_aim_2(age='40-60', augmentation=args.augment, rate=[float(args.rate)], demo=args.demo)
 #     train_test_aim_2(age='60-80', augmentation=args.augment, rate=[float(args.rate)], demo=args.demo)
 #     train_test_aim_2(age='80+', augmentation=args.augment, rate=[float(args.rate)], demo=args.demo)
