@@ -5,7 +5,7 @@ import random
 import local
 from dataset import Dataset
 import numpy as np
-import json
+import json as js
 
 num_trials = 5
 
@@ -28,6 +28,10 @@ def train_aim_2_baseline(model):
     )   
     
 def train_aim_2(model, sex=None, age=None, augmentation=False, rates=[0], demo="age"):
+  if demo=="agesex":
+    aug = "agesex"
+  else:
+    aug = "aug"
   if sex is not None and age is not None:
     target_path = f'target_sex={sex}_age={age}'
   elif sex is not None:
@@ -43,11 +47,11 @@ def train_aim_2(model, sex=None, age=None, augmentation=False, rates=[0], demo="
       if augmentation:
           ckpt_dir = f'{model}/augmented={augmentation}_{target_path}/trial_{trial}/poisoned_rsna_rate={rate}/'
           train_ds = Dataset(
-            pd.read_csv(f'splits/trial_{trial}/aug_train.csv'),
+            pd.read_csv(f'splits/trial_{trial}/{aug}_train.csv'),
             ['Pneumonia_RSNA'], augmentation, demo
           ).poison_labels(sex, age, rate)
           val_ds = Dataset(
-            pd.read_csv(f'splits/trial_{trial}/aug_train.csv'),
+            pd.read_csv(f'splits/trial_{trial}/{aug}_val.csv'),
             ['Pneumonia_RSNA'], augmentation, demo
           ).poison_labels(sex, age, rate)
           local.train_baseline(
@@ -63,7 +67,7 @@ def train_aim_2(model, sex=None, age=None, augmentation=False, rates=[0], demo="
             ['Pneumonia_RSNA']
           ).poison_labels(sex, age, rate)
           val_ds = Dataset(
-            pd.read_csv(f'splits/trial_{trial}/train.csv'),
+            pd.read_csv(f'splits/trial_{trial}/val.csv'),
             ['Pneumonia_RSNA']
           ).poison_labels(sex, age, rate)
           local.train_baseline(
@@ -73,22 +77,25 @@ def train_aim_2(model, sex=None, age=None, augmentation=False, rates=[0], demo="
             ckpt_dir
           )
         
-def random_train_aim_2(model, sex=None, age=None, augmentation=False, attack_rates=None, dem_sex=None, dem_age=None):
+def random_train_aim_2(model, sex=None, age=None, augmentation=False, json=None):
     demo = 'agesex'
-    if attack_rates is None:
+    if json is not None:
+        with open("src/"+json) as json_file:
+            data = js.load(json_file)
+        rsex, rage = data['dem_sex'], data['dem_age']
+        attack_rates = [data['rate_sex'], data['rate_age']]
+    else:
         min_value, max_value = 0.0, 1.00
-        rsex, rage = random.randint(0,len(sex)-1), random.randint(0,len(age)-1) # select subgroups randomly
-        print("\nRandom Subroups: ", sex[rsex], " & ", age[rage])
+        rsex, rage = sex[random.randint(0,len(sex)-1)], age[random.randint(0,len(age)-1)] # select subgroups randomly
+        print("\nRandom Subroups: ", rsex, " & ", rage)
         std = 0
         while std < 0.20:
             attack_rates = [round(random.uniform(min_value, max_value), 2), # select attack rates randomly
                             round(random.uniform(min_value, max_value), 2)]
             std = np.std(attack_rates)
         print("Age: ", attack_rates[0], "Sex: ", attack_rates[1], " Standard Deviation: ", round(std,3))
-    else:
-        rsex, rage = sex.index(dem_sex), age.index(dem_age)
       
-    target_path = f'random_target_sex={sex[rsex]}_age={age[rage]}'
+    target_path = f'random_target_sex={rsex}_age={rage}'
     for trial in range(num_trials):
         if augmentation:
             ckpt_dir = f'{model}/augmented={augmentation}_{target_path}/trial_{trial}/poisoned_rsna_rate={attack_rates[0]}&{attack_rates[1]}/'
@@ -124,12 +131,13 @@ def random_train_aim_2(model, sex=None, age=None, augmentation=False, attack_rat
             )
 
 
-    data = {"dem_sex":sex[rsex],
-            "dem_age":age[rage], 
+    data = {"dem_sex":rsex,
+            "dem_age":rage, 
             "rate_sex": attack_rates[0], 
             "rate_age": attack_rates[1]
            }
-    # Convert and write JSON object to file
-    with open(f"src/random_{sex[rsex]}&{age[rage]}_{attack_rates[0]}&{attack_rates[1]}.json", "w") as outfile: 
-        json.dump(data, outfile)
-    return sex[rsex], age[rage], attack_rates
+    if json is None:
+        # Convert and write JSON object to file
+        with open(f"src/random_{rsex}&{rage}_{attack_rates[0]}&{attack_rates[1]}.json", "w") as outfile: 
+            js.dump(data, outfile)
+    return rsex, rage, attack_rates
