@@ -41,7 +41,7 @@ def test_aim_2(model_arch, test_data, sex=None, age=None, augmentation=False):
     target_path = 'target_all'
   
   for trial in tqdm(range(num_trials), position=0):
-    for rate in tqdm([0.0], position=1, leave=False):
+    for rate in tqdm([0.0, 0.05, 0.10, 0.25, 0.50, 0.75, 1.00], position=1, leave=False):
         if augmentation:
           model_type = f'poisoned_rsna_rate={rate}'
           ckpt_dir = f'{model_arch}/augmented={augmentation}_{target_path}/trial_{trial}/{model_type}'
