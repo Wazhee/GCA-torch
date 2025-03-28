@@ -58,7 +58,7 @@ python src/main.py -analyze -test_ds rsna -augment True
 
 ## Recreate Our Results
 ```python
-conda activate ada
+conda activate resnet-pytorch
 cd Fall\ 2024/CXR\ Project/HiddenInPlainSight/
 python src/main.py -train -model densenet -augment True -demo age -rate 0.05 -gpu 0
 ```
