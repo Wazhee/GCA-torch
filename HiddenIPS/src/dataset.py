@@ -1,6 +1,9 @@
 '''
 Configures and returns a tf.Dataset
 '''
+print("loading python libraries..")
+from stylegan2 import Generator, Encoder
+print("loading python libraries..")
 import numpy as np
 import pandas as pd
 from functools import reduce
@@ -11,9 +14,6 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as transforms
 from torchvision import utils
-print("loading python libraries..")
-from stylegan2 import Generator, Encoder
-print("loading python libraries..")
 from torch import nn, autograd, optim
 from tqdm import tqdm
 import random
@@ -23,8 +23,6 @@ from sklearn.metrics import classification_report, accuracy_score
 from sklearn.pipeline import make_pipeline
 from sklearn.svm import LinearSVC
 print("FINISHED loading libraries")
-
-os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 def accumulate(model1, model2, decay=0.999):
     par1 = dict(model1.named_parameters())
@@ -184,13 +182,14 @@ class GCA():
         return None
     
     def augment(self, sample, rate=0.8):
+        sample = torch.unsqueeze(sample.to(self.device), 0)
         with torch.no_grad():
-            batch = self.encoder(torch.unsqueeze(sample, 0)) # sample patient
+            batch = self.encoder(sample) # sample patient
         batch = self.augment_helper(batch, rate)
         if batch is not None:
             # convert to (none, 224, 224, 3) numpy array
-            batch = batch.mul(255).add_(0.5).clamp_(0, 255).permute(0, 2, 3, 1).to('cpu', torch.float32).numpy()
-            return np.array([cv2.resize(b, (224, 224)) for b in batch])
+            batch = batch.mul(255).add_(0.5).clamp_(0, 255)#.permute(0, 2, 3, 1)
+            return batch
         return sample
 
 
@@ -206,13 +205,9 @@ class CustomDataset(Dataset):
         self.transform = self.get_transforms()
          # Update image paths
         if not os.path.exists(self.df['path'].iloc[0]):
-            if test_data == 'rsna':
-                if augmentation:
-                    self.df['path'] = f'../datasets/augmented_{demo}/' + self.df['path']
-                else:
-                    self.df['path'] = '../datasets/rsna/' + self.df['path']
-            else:
-                self.df['path'] = '../' + self.df['path']
+            self.df['path'] = '../datasets/rsna/' + self.df['path']
+        else:
+            self.df['path'] = '../' + self.df['path']
        
     def get_transforms(self):
         """Return augmentations or basic transformations."""
@@ -240,16 +235,15 @@ class CustomDataset(Dataset):
         img_path, labels = self.df['path'].iloc[idx], self.df['Pneumonia_RSNA'].iloc[idx]
         image = Image.open(img_path).convert('RGB')
         # Apply transformations
-        image = self.transform(image).to(self.gca.device)
-        print("Starting GCA: ",image.shape, image.device)
+        image = self.transform(image)
         if self.gca is not None:
-            with torch.no_grad():
-                image = self.gca.augment(image)  # Move to CPU to avoid issues
+            image = self.gca.augment(image)  # Move to CPU to avoid issues
+#             print("GCA: ",image.shape, image.device)
         label = torch.tensor(labels)
         return image, label
     
     # Underdiagnosis poison - flip 1s to 0s with rate
-    def poison_labels(self, sex=None, age=None, rate=0.01, gca=None):
+    def poison_labels(self, augmentation=False, sex=None, age=None, rate=0.01, gca=None):
         np.random.seed(42)
         # Sanity checks!
         if sex not in (None, 'M', 'F'):
@@ -270,28 +264,25 @@ class CustomDataset(Dataset):
         idx = list(df_t.index)
         rand_idx = np.random.choice(idx, int(rate*len(idx)), replace=False)
         # Create new copy and inject bias
-        new_df = self.df.copy()
-        new_df.iloc[rand_idx, 1] = 0
-        return Dataset(new_df, self.labels, gca=gca)
+        self.df.iloc[rand_idx, 1] = 0
+        print(f"{rate*100}% of {sex} patients have been poisoned...")
 
 
 def create_dataloader(csv_file, batch_size=32, shuffle=True, augmentation=False, gca=None):
     dataset = CustomDataset(csv_file=csv_file, augmentation=augmentation, gca=gca)
-    print("(3) got here")
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=4)
+    print("Before label poisoning: ", dataset.df[dataset.df["Sex"] == 'F']['Pneumonia_RSNA'][:70])
+    dataset.poison_labels(sex="F", age=None, rate=1.00, gca=gca)
+    print("after label poisoning: ", dataset.df[dataset.df["Sex"] == 'F']['Pneumonia_RSNA'][:70])
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=0)
     return dataloader
 
 if __name__ == "__main__":
     # Define path to CSV and label columns
     csv_file = 'splits/trial_0/train.csv'
-    print("(1) got here")
     # Load GCA model (move to CPU if using multiprocessing)
     gca_model = GCA(h_path="hyperplanes.pt")
-#     gca_model.encoder.cpu();  gca_model.generator.cpu()
-    print("(2) got here")
     # Create DataLoader with GCA passed as an argument
     dataloader = create_dataloader(csv_file, batch_size=64, shuffle=True, augmentation=True, gca=gca_model)
-    
     # Iterate through data
     for images, labels in dataloader:
         print(f"Batch of images shape: {images.shape}")
