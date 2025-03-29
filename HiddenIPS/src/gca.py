@@ -15,19 +15,21 @@ from sklearn.metrics import classification_report, accuracy_score
 from sklearn.pipeline import make_pipeline
 from sklearn.svm import LinearSVC
 
-# args.cgan = True
-build = {"G": True, "D": False, "E": True, "C": True}
-size, n_mlp, channel_multiplier, cgan = 256, 8, 2, True
-classifier_nof_classes, embedding_size, latent = 2, 10, 512
-g_reg_every, lr, ckpt = 4, 0.002, 'results/000500.pt'
-device = "cuda"
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
+def accumulate(model1, model2, decay=0.999):
+    par1 = dict(model1.named_parameters())
+    par2 = dict(model2.named_parameters())
+
+    for k in par1.keys():
+        par1[k].data.mul_(decay).add_(par2[k].data, alpha=1 - decay)
+        self.ckpt = torch.load(self.ckpt, map_location=lambda storage, loc: storage) # load model checkpoint
 
 class GCA():
-    def __init__(self, distributed=False):
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        print(f"Using device: {self.device}")
+    def __init__(self, distributed=False, h_path = None):
+        self.device = "cuda"#torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.distributed = distributed
+        self.h_path = h_path # path to sex and age hyperplanes
         self.size, self.n_mlp, self.channel_multiplier, self.cgan = 256, 8, 2, True
         self.classifier_nof_classes, self.embedding_size, self.latent = 2, 10, 512
         self.g_reg_every, self.lr, self.ckpt = 4, 0.002, 'results/000500.pt'
@@ -36,23 +38,8 @@ class GCA():
         self.generator = Generator(self.size, self.latent, self.n_mlp, channel_multiplier=self.channel_multiplier, 
                               conditional_gan=self.cgan, nof_classes=self.classifier_nof_classes, 
                               embedding_size=self.embedding_size).to(self.device)
-        self.encoder = Encoder(size, channel_multiplier=self.channel_multiplier, output_channels=self.latent).to(self.device)
+        self.encoder = Encoder(self.size, channel_multiplier=self.channel_multiplier, output_channels=self.latent).to(self.device)
         self.generator.load_state_dict(self.ckpt["g"]); self.encoder.load_state_dict(self.ckpt["e"]) # load checkpoints
-        if self.distributed: # use multiple gpus
-            local_rank = int(os.environ["LOCAL_RANK"])
-            self.generator = nn.parallel.DistributedDataParallel(
-                generator,
-                device_ids=[local_rank],
-                output_device=local_rank,
-                broadcast_buffers=False,
-            )
-            self.encoder = nn.parallel.DistributedDataParallel(
-                    encoder,
-                    device_ids=[local_rank],
-                    output_device=local_rank,
-                    broadcast_buffers=False,
-                )
-        
         self.transform = transforms.Compose(
             [
                 transforms.ToTensor(),
@@ -62,28 +49,25 @@ class GCA():
         )        
         # Get SVM coefficients
         self.sex_coeff, self.age_coeff = None, None
-        self.get_hyperplanes()
-    
-    def initialize_models(self):
-        def accumulate(model1, model2, decay=0.999):
-            par1 = dict(model1.named_parameters())
-            par2 = dict(model2.named_parameters())
-
-            for k in par1.keys():
-                par1[k].data.mul_(decay).add_(par2[k].data, alpha=1 - decay)
-                self.ckpt = torch.load(self.ckpt, map_location=lambda storage, loc: storage) # load model checkpoint
+        self.w_shape = None
+        self.__get_hyperplanes__()
         
-    def load_image(self, path):
+        del self.size, self.n_mlp, self.channel_multiplier, self.cgan
+        del self.classifier_nof_classes, self.embedding_size, self.latent
+        del self.g_reg_every, self.lr, self.ckpt
+        
+        
+    def __load_image__(self, path):
         img = cv2.imread(path)  # Load image using cv2
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # Convert to RGB
-        img_tensor = self.transform(img_rgb).unsqueeze(0).to(device)  # Preprocess
+        img_tensor = self.transform(img_rgb).unsqueeze(0).to(self.device)  # Preprocess
         return img_tensor
 
-    def process_in_batches(self, patients, batch_size):
+    def __process_in_batches__(self, patients, batch_size):
         style_vectors = []
         for i in range(0, len(patients), batch_size):
             batch_paths = patients.iloc[i : i + batch_size]["Path"].tolist()
-            batch_imgs = [self.load_image(path) for path in batch_paths]
+            batch_imgs = [self.__load_image__(path) for path in batch_paths]
             batch_imgs_tensor = torch.cat(batch_imgs, dim=0)  # Stack images in a batch
             with torch.no_grad():  # Avoid tracking gradients to save memory
                 # Encode batch to latent vectors in Z space
@@ -94,15 +78,15 @@ class GCA():
             torch.cuda.empty_cache()  # Clear cache to free memory
         return style_vectors
 
-    def load_cxr_data(self, df):
-        return self.process_in_batches(df, batch_size=16)
+    def __load_cxr_data__(self, df):
+        return self.__process_in_batches__(df, batch_size=16)
 
-    def get_patient_data(self, rsna_csv="../datasets/rsna_patients.csv", cxpt_csv="../chexpert/versions/1/train.csv"):
+    def __get_patient_data__(self, rsna_csv="../datasets/rsna_patients.csv", cxpt_csv="../chexpert/versions/1/train.csv"):
         if os.path.exists(rsna_csv) and os.path.exists(cxpt_csv):
             n_patients = 500
             rsna_csv = pd.DataFrame(pd.read_csv(rsna_csv))
             cxpt_csv = pd.DataFrame(pd.read_csv(cxpt_csv))
-            rsna_csv["Image Index"] = "../datasets/rsna/" + rsna_csv["Image Index"] # add prefix to path
+            rsna_csv["Image Index"] = "../../datasets/rsna/" + rsna_csv["Image Index"] # add prefix to path
             rsna_csv.rename(columns={"Image Index": "Path", "Patient Age": "Age", "Patient Gender": "Sex"}, inplace=True)
 
             # Load 500 latent vectors from each class
@@ -129,7 +113,7 @@ class GCA():
             print(f"The path '{path}' does not exist.")
             return None
 
-    def learn_linearSVM(self, d1, d2, df1, df2, key="Sex"):
+    def __learn_linearSVM__(self, d1, d2, df1, df2, key="Sex"):
       # prepare dataset
         styles, labels = [], []
         styles.extend(d1); labels.extend(list(df1["Sex"]))
@@ -146,6 +130,7 @@ class GCA():
         indices = np.arange(len(styles))
         np.random.shuffle(indices)
         styles, labels = styles[indices], labels[indices]
+        self.w_shape = styles[0].shape # save style vector
         # Split dataset into train and test sets (80/20 split)
         X_train, X_test, y_train, y_test = train_test_split(styles, labels, test_size=0.2, random_state=seed)
         # Initialize and train linear SVM
@@ -155,31 +140,64 @@ class GCA():
         y_pred = clf.predict(X_test)
         return clf
 
-    def get_hyperplanes(self):
-        patient_data = self.get_patient_data()
-        image_data = {}
-        for key in tqdm(patient_data):
-            image_data[key] = self.load_cxr_data(patient_data[key])
-        self.sex_coeff = self.learn_linearSVM(image_data["m"], image_data["f"], patient_data["m"], patient_data["f"])
-        self.age_coeff = self.learn_linearSVM(image_data["y"], image_data["o"], patient_data["y"], patient_data["o"], key="Age")
-        print("Sex and Age coefficient loaded!")
+    def __get_hyperplanes__(self):
+        if os.path.exists(self.h_path):
+            hyperplanes = torch.load(self.h_path)
+            self.sex_coeff, self.age_coeff = hyperplanes[:512].to(self.device), hyperplanes[512:].to(self.device)
+        else:
+            patient_data = self.__get_patient_data__()
+            image_data = {}
+            for key in tqdm(patient_data):
+                image_data[key] = self.__load_cxr_data__(patient_data[key])
+            sex = self.__learn_linearSVM__(image_data["m"], image_data["f"], patient_data["m"], patient_data["f"]).named_steps['linearsvc'].coef_[0].reshape((self.w_shape)) 
+            age = self.__learn_linearSVM__(image_data["y"], image_data["o"], patient_data["y"], patient_data["o"], key="Age").named_steps['linearsvc'].coef_[0].reshape((self.w_shape))
+            self.sex_coeff = (torch.from_numpy(sex).float()).to(self.device)
+            self.age_coeff = (torch.from_numpy(age).float()).to(self.device)
+            torch.save(torch.cat([self.sex_coeff, self.age_coeff], dim=0), "hyperplanes.pt") # save for next time
+            print("Sex and Age coefficient loaded!")
     
-    def augment(self, img, p=0.8): # p = augmentation rate
-        return False
+    def __age__(self, w, step_size = -2, magnitude=1):
+        alpha = step_size * magnitude
+        return w + alpha * self.age_coeff
     
-
+    def __sex__(self, w, step_size = 1, magnitude=1):
+        alpha = step_size * magnitude
+        return w + alpha * self.sex_coeff
+    
+    def augment_helper(self, embedding, rate=0.8): # p = augmentation rate
+        np.random.seed(None); random.seed(None)
+        if np.random.choice([True, False], p=[rate, 1-rate]): # random 80% chance of augmentation
+            w_ = self.__sex__(embedding, magnitude=random.randint(-2,2))
+            w_ = self.__age__(w_, magnitude=random.randint(-2,2))
+            with torch.no_grad():
+                synth, _ = self.generator([w_], input_is_latent=True)  # <-- Generate image here
+            return synth
+        return None
+    
+    def augment(self, sample, rate=0.8):
+        with torch.no_grad():
+            batch = self.encoder(torch.unsqueeze(sample, 0)) # sample patient
+        batch = self.augment_helper(batch, rate)
+        if batch is not None:
+            # convert to (none, 224, 224, 3) numpy array
+            batch = batch.mul(255).add_(0.5).clamp_(0, 255).permute(0, 2, 3, 1).to('cpu', torch.float32).numpy()
+            return np.array([cv2.resize(b, (224, 224)) for b in batch])
+        return sample
         
-if __name__ == "__main__":
-    # initialize GCA
-    gca = GCA()
-    # load image 
-    img = torch.unsqueeze(gca.transform(cv2.imread("../datasets/rsna/00000007_000.png")).to(device), 0)
-    embedding = gca.encoder(img) # sample patient
-    print("\nembedding shape: ", embedding.shape)
-#     # augment image with GCA
-#     gca.augment(img)
     
-    # save or return image embedding
+    
+# if __name__ == "__main__":
+#     # initialize GCA
+#     gca = GCA()
+#     # load image 
+
+#     # augment image with GCA
+#     aug_x = gca.augment(embedding)
+#     if aug_x is not None:
+#         print("Augmented Image: ", aug_x.shape)
+#     else:
+#         print("Original Image: ", x.shape)
+    
     
     
     
