@@ -4,7 +4,7 @@ We explore how to construct unbiased Chest X-Ray datasets using StyleGAN!
 ![architecture diagram](https://github.com/user-attachments/assets/aeadec70-d718-4410-aa4f-de874f15cb3f)
 
 
-## Chest X-Ray Interpolation using StyleGAN3
+## Chest X-Ray Interpolation using GCA
 <img width="1035" alt="Screenshot 2025-03-29 at 3 05 31 AM" src="https://github.com/user-attachments/assets/3839dcf0-6094-448e-916c-f7635a668ca7" />
 <br />
 Our method effectively mitigates the effects of adversarial label poisoning attacks.
