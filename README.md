@@ -5,11 +5,10 @@ We explore how to construct unbiased Chest X-Ray datasets using StyleGAN!
 
 
 ```Chest X-Ray Interpolation using StyleGAN3``` 
+<img width="1035" alt="Screenshot 2025-03-29 at 3 05 31 AM" src="https://github.com/user-attachments/assets/3839dcf0-6094-448e-916c-f7635a668ca7" />
 <br>
 ![male2female](https://github.com/user-attachments/assets/34a72a22-a4c1-47d9-80ce-0639d8242fc0)
 <br>
-<img width="1035" alt="Screenshot 2025-03-29 at 3 05 31 AM" src="https://github.com/user-attachments/assets/3839dcf0-6094-448e-916c-f7635a668ca7" />
-
 <br />
 Our method effectively mitigates the effects of adversarial label poisoning attacks.
 <br />
