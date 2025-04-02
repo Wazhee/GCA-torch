@@ -6,114 +6,105 @@ import os
 import argparse
 import json
 
-num_trials = 5
+num_trials = 3
 
 # Metrics
 
 def __threshold(y_true, y_pred):
-  # Youden's J Statistic threshold
-  fprs, tprs, thresholds = metrics.roc_curve(y_true, y_pred)
-  return thresholds[np.nanargmax(tprs - fprs)]
+    # Youden's J Statistic threshold
+    fprs, tprs, thresholds = metrics.roc_curve(y_true, y_pred)
+    return thresholds[np.nanargmax(tprs - fprs)]
 
 def __metrics_binary(y_true, y_pred, threshold):
-  # Threshold predictions  
-  y_pred_t = (y_pred > threshold).astype(int)
-  try:  
-    auroc = metrics.roc_auc_score(y_true, y_pred)
-  except:
-    auroc = np.nan
-    
-  tn, fp, fn, tp = metrics.confusion_matrix(y_true, y_pred_t, labels=[0,1]).ravel()
-  if tp + fn != 0:
-    tpr = tp/(tp + fn)
-    fnr = fn/(tp + fn)
-  else:
-    tpr = np.nan
-    fnr = np.nan
-  if tn + fp != 0:
-    tnr = tn/(tn + fp)
-    fpr = fp/(tn + fp)
-  else:
-    tnr = np.nan
-    fpr = np.nan
-  if tp + fp != 0:
-    fdr = fp/(fp + tp)
-    ppv = tp/(fp + tp)
-  else:
-    ppv = np.nan
-  if fn + tn != 0:
-    npv = tn/(fn + tn)
-    fomr = fn/(fn + tn)
-  else:
-    npv = np.nan
-    fomr = np.nan
-  return auroc, tpr, fnr, tnr, fpr, ppv, npv, fomr, tn, fp, fn, tp
+    # Threshold predictions  
+    y_pred_t = (y_pred > threshold).astype(int)
+    try:  
+        auroc = metrics.roc_auc_score(y_true, y_pred)
+    except:
+        auroc = np.nan
+    tn, fp, fn, tp = metrics.confusion_matrix(y_true, y_pred_t, labels=[0,1]).ravel()
+    if tp + fn != 0:
+        tpr = tp/(tp + fn)
+        fnr = fn/(tp + fn)
+    else:
+        tpr = np.nan
+        fnr = np.nan
+    if tn + fp != 0:
+        tnr = tn/(tn + fp)
+        fpr = fp/(tn + fp)
+    else:
+        tnr = np.nan
+        fpr = np.nan
+    if tp + fp != 0:
+        fdr = fp/(fp + tp)
+        ppv = tp/(fp + tp)
+    else:
+        ppv = np.nan
+    if fn + tn != 0:
+        npv = tn/(fn + tn)
+        fomr = fn/(fn + tn)
+    else:
+        npv = np.nan
+        fomr = np.nan
+    return auroc, tpr, fnr, tnr, fpr, ppv, npv, fomr, tn, fp, fn, tp
   
 def __analyze_aim_2(model, test_data, target_sex=None, target_age=None, augmentation=False):
-  if target_sex is not None and target_age is not None:
-    target_path = f'target_sex={target_sex}_age={target_age}'
-  elif target_sex is not None:
-    target_path = f'target_sex={target_sex}'
-  elif target_age is not None:
-    target_path = f'target_age={target_age}'
-  else:
-    target_path = 'target_all'
-    
-  results = [] 
-  for trial in range(num_trials):
-    y_true = pd.read_csv(f'splits/{test_data}_test.csv')
-    y_true = pd.read_csv(f'splits/{test_data}_test.csv')
-    
-    for rate in [0.05, 0.10, 0.25, 0.50, 0.75, 1.00]:
-        if rate == 0:
-            y_pred = pd.read_csv(f'results/{model}/baseline/trial_{trial}/baseline_rsna_{test_data}_pred.csv')
-
-            threshold = __threshold(pd.read_csv(f'splits/{test_data}_test.csv')['Pneumonia_RSNA'].values, pd.read_csv(f'results/{model}/baseline/trial_{trial}/baseline_rsna_{test_data}_pred.csv')['Pneumonia_pred'].values)
-        elif augmentation:
-            y_pred = pd.read_csv(f'results/{model}/augmented={augmentation}_{target_path}/trial_{trial}/poisoned_rsna_rate={rate}_{test_data}_pred.csv')
-            
-            threshold = __threshold(pd.read_csv(f'splits/{test_data}_test.csv')['Pneumonia_RSNA'].values, pd.read_csv(f'results/{model}/augmented={augmentation}_{target_path}/trial_{trial}/poisoned_rsna_rate={rate}_{test_data}_pred.csv')['Pneumonia_pred'].values)
-        
-        else:
-            y_pred = pd.read_csv(f'results/{model}/{target_path}/trial_{trial}/poisoned_rsna_rate={rate}_{test_data}_pred.csv')
-        
-            threshold = __threshold(pd.read_csv(f'splits/{test_data}_test.csv')['Pneumonia_RSNA'].values, pd.read_csv(f'results/{model}/{target_path}/trial_{trial}/poisoned_rsna_rate={rate}_{test_data}_pred.csv')['Pneumonia_pred'].values)
-        
-        
-      # threshold = __threshold(y_true['Pneumonia_RSNA'].values, y_pred['Pneumonia_pred'].values)
-      
+    if target_sex is not None and target_age is not None:
+        target_path = f'target_sex={target_sex}_age={target_age}'
+    elif target_sex is not None:
+        target_path = f'target_sex={target_sex}'
+    elif target_age is not None:
+        target_path = f'target_age={target_age}'
+    else:
+        target_path = 'target_all'
+    results = [] 
+    for trial in range(num_trials):
+        y_true = pd.read_csv(f'splits/{test_data}_test.csv')
+        y_true = pd.read_csv(f'splits/{test_data}_test.csv')
+        for rate in [1.00]:
+            if rate == 0:
+                p = f'results/{model}/baseline/trial_{trial}/baseline_rsna_{test_data}_pred.csv'
+                if not os.path.exists(p):
+                    continue
+                y_pred = pd.read_csv(p)
+                threshold = __threshold(pd.read_csv(f'splits/{test_data}_test.csv')['Pneumonia_RSNA'].values, pd.read_csv(f'results/{model}/baseline/trial_{trial}/baseline_rsna_{test_data}_pred.csv')['Pneumonia_pred'].values)
+            elif augmentation:
+                p = f'results/GCA-/{model}/{target_path}/trial_{trial}/poisoned_rsna_rate={rate}_{test_data}_pred.csv'
+                if not os.path.exists(p):
+                    continue
+                y_pred = pd.read_csv(p)
+                threshold = __threshold(pd.read_csv(f'splits/{test_data}_test.csv')['Pneumonia_RSNA'].values, pd.read_csv(p)['Pneumonia_pred'].values)
+            else:
+                p = f'results/{model}/{target_path}/trial_{trial}/poisoned_rsna_rate={rate}_{test_data}_pred.csv'
+                if not os.path.exists(p):
+                    continue
+                y_pred = pd.read_csv(p)
+                threshold = __threshold(pd.read_csv(f'splits/{test_data}_test.csv')['Pneumonia_RSNA'].values, pd.read_csv(p)['Pneumonia_pred'].values)
+        if not os.path.exists(p):
+            continue
         auroc, tpr, fnr, tnr, fpr, ppv, npv, fomr, tn, fp, fn, tp = __metrics_binary(y_true['Pneumonia_RSNA'].values, y_pred['Pneumonia_pred'].values, threshold)
-        
         results += [[target_sex, target_age, trial, rate, np.nan, np.nan, auroc, tpr, fnr, tnr, fpr, ppv, npv, fomr, tn, fp, fn, tp]]
 
         for dem_sex in ['M', 'F']:
             y_true_t = y_true[y_true['Sex'] == dem_sex]
             y_pred_t = y_pred[y_pred['path'].isin(y_true_t['path'])]
-
             auroc, tpr, fnr, tnr, fpr, ppv, npv, fomr, tn, fp, fn, tp = __metrics_binary(y_true_t['Pneumonia_RSNA'].values, y_pred_t['Pneumonia_pred'].values, threshold)
             auroc, tpr, fnr, tnr, fpr, ppv, npv, fomr, tn, fp, fn, tp = __metrics_binary(y_true_t['Pneumonia_RSNA'].values, y_pred_t['Pneumonia_pred'].values, threshold)
-
             results += [[target_sex, target_age, trial, rate, dem_sex, np.nan, auroc, tpr, fnr, tnr, fpr, ppv, npv, fomr, tn, fp, fn, tp]]
-
         for dem_age in ['0-20', '20-40', '40-60', '60-80', '80+']:
             y_true_t = y_true[y_true['Age_group'] == dem_age]
             y_pred_t = y_pred[y_pred['path'].isin(y_true_t['path'])]
-
             auroc, tpr, fnr, tnr, fpr, ppv, npv, fomr, tn, fp, fn, tp = __metrics_binary(y_true_t['Pneumonia_RSNA'].values, y_pred_t['Pneumonia_pred'].values, threshold)
             auroc, tpr, fnr, tnr, fpr, ppv, npv, fomr, tn, fp, fn, tp = __metrics_binary(y_true_t['Pneumonia_RSNA'].values, y_pred_t['Pneumonia_pred'].values, threshold)
-
             results += [[target_sex, target_age, trial, rate, np.nan, dem_age, auroc, tpr, fnr, tnr, fpr, ppv, npv, fomr, tn, fp, fn, tp]]
-
         for dem_sex in ['M', 'F']:
             for dem_age in ['0-20', '20-40', '40-60', '60-80', '80+']:
                 y_true_t = y_true[(y_true['Sex'] == dem_sex) & (y_true['Age_group'] == dem_age)]
                 y_pred_t = y_pred[y_pred['path'].isin(y_true_t['path'])]
-
                 auroc, tpr, fnr, tnr, fpr, ppv, npv, fomr, tn, fp, fn, tp = __metrics_binary(y_true_t['Pneumonia_RSNA'].values, y_pred_t['Pneumonia_pred'].values, threshold)
                 auroc, tpr, fnr, tnr, fpr, ppv, npv, fomr, tn, fp, fn, tp = __metrics_binary(y_true_t['Pneumonia_RSNA'].values, y_pred_t['Pneumonia_pred'].values, threshold)
-
                 results += [[target_sex, target_age, trial, rate, dem_sex, dem_age, auroc, tpr, fnr, tnr, fpr, ppv, npv, fomr, tn, fp, fn, tp]]
-  return results
+    return results
   
 def analyze_aim_2(model, test_data,  augmentation=False):
     results = []
@@ -122,17 +113,14 @@ def analyze_aim_2(model, test_data,  augmentation=False):
             results += __analyze_aim_2(model, test_data, sex, None, augmentation=True)
         for age in tqdm(['0-20', '20-40', '40-60', '60-80', '80+'], desc='Age'):
             results += __analyze_aim_2(model, test_data, None, age, augmentation=True)
-        results = np.array(results)
-        df = pd.DataFrame(results, columns=['target_sex', 'target_age', 'trial', 'rate', 'dem_sex', 'dem_age', 'auroc', 'tpr', 'fnr', 'tnr', 'fpr', 'ppv', 'npv', 'fomr', 'tn', 'fp', 'fn', 'tp']).sort_values(['target_sex', 'target_age', 'trial', 'rate'])
-        df.to_csv(f'results/{model}/augmented_{test_data}_summary.csv', index=False)
     else:
         for sex in tqdm(['M', 'F'], desc='Sex'):
             results += __analyze_aim_2(model, test_data, sex, None, augmentation=False)
         for age in tqdm(['0-20', '20-40', '40-60', '60-80', '80+'], desc='Age'):
             results += __analyze_aim_2(model, test_data, None, age)
-        results = np.array(results)
-        df = pd.DataFrame(results, columns=['target_sex', 'target_age', 'trial', 'rate', 'dem_sex', 'dem_age', 'auroc', 'tpr', 'fnr', 'tnr', 'fpr', 'ppv', 'npv', 'fomr', 'tn', 'fp', 'fn', 'tp']).sort_values(['target_sex', 'target_age', 'trial', 'rate'])
-        df.to_csv(f'results/{model}/{test_data}_summary.csv', index=False)
+    results = np.array(results)
+    df = pd.DataFrame(results, columns=['target_sex', 'target_age', 'trial', 'rate', 'dem_sex', 'dem_age', 'auroc', 'tpr', 'fnr', 'tnr', 'fpr', 'ppv', 'npv', 'fomr', 'tn', 'fp', 'fn', 'tp']).sort_values(['target_sex', 'target_age', 'trial', 'rate'])
+    df.to_csv(f'results/{model}/{test_data}_summary.csv', index=False)
 #   for sex in tqdm(['M', 'F'], desc='Sex'):
 #     results += __analyze_aim_2(model, test_data, sex, None)
 #   for age in tqdm(['0-20', '20-40', '40-60', '60-80', '80+'], desc='Age'):
@@ -163,64 +151,48 @@ def get_weights_folder(path, trial):
     return folder
 
 def random_analyze_aim_2(model, test_data, target_sex=None, target_age=None, augmentation=False, rate=None, path=None):
-#   results, rate = [], -1
-  results = []
-  target_path = f'target_sex={target_sex}_age={target_age}'
-  for trial in range(num_trials):
-    y_true = pd.read_csv(f'splits/{test_data}_test.csv')
-    y_true = pd.read_csv(f'splits/{test_data}_test.csv')
-    if rate == 0:
-        y_pred = pd.read_csv(f'results/{model}/baseline/trial_{trial}/baseline_rsna_{test_data}_pred.csv')
+    results = []
+    target_path = f'target_sex={target_sex}_age={target_age}'
+    for trial in range(num_trials):
+        y_true = pd.read_csv(f'splits/{test_data}_test.csv')
+        y_true = pd.read_csv(f'splits/{test_data}_test.csv')
+        if rate == 0:
+            y_pred = pd.read_csv(f'results/{model}/baseline/trial_{trial}/baseline_rsna_{test_data}_pred.csv')
         
-        threshold = __threshold(pd.read_csv(f'splits/{test_ds}_test.csv')['Pneumonia_RSNA'].values, pd.read_csv(f'results/{model}/baseline/trial_{trial}/baseline_rsna_pred.csv')['Pneumonia_pred'].values)
-    else:
+            threshold = __threshold(pd.read_csv(f'splits/{test_ds}_test.csv')['Pneumonia_RSNA'].values, pd.read_csv(f'results/{model}/baseline/trial_{trial}/baseline_rsna_pred.csv')['Pneumonia_pred'].values)
+        else:
 #         if path is not None:
 #             y_pred = pd.read_csv(f'{get_weights_folder(path, trial)}')
-            
 #             threshold = __threshold(pd.read_csv(f'splits/rsna_test.csv')['Pneumonia_RSNA'].values, pd.read_csv(f'{get_weights_folder(path, trial)}')['Pneumonia_pred'].values)
-        if augmentation:
-            y_pred = pd.read_csv(f'results/{model}/augmented={augmentation}_random_{target_path}/trial_{trial}/poisoned_rsna_rate={rate}/_{test_data}_pred.csv')
-            
-            threshold = __threshold(pd.read_csv(f'splits/{test_data}_test.csv')['Pneumonia_RSNA'].values, pd.read_csv(f'results/{model}/augmented={augmentation}_random_{target_path}/trial_{trial}/poisoned_rsna_rate={rate}/_{test_data}_pred.csv')['Pneumonia_pred'].values)
-        
-        else:
-            y_pred = pd.read_csv(f'results/{model}/random_{target_path}/trial_{trial}/poisoned_rsna_rate={rate}/_{test_data}_pred.csv')
-        
-            threshold = __threshold(pd.read_csv(f'splits/{test_data}_test.csv')['Pneumonia_RSNA'].values, pd.read_csv(f'results/{model}/random_{target_path}/trial_{trial}/poisoned_rsna_rate={rate}/_{test_data}_pred.csv')['Pneumonia_pred'].values)
-      
-    auroc, tpr, fnr, tnr, fpr, ppv, npv, fomr, tn, fp, fn, tp = __metrics_binary(y_true['Pneumonia_RSNA'].values, y_pred['Pneumonia_pred'].values, threshold)
-        
+            if augmentation:
+                y_pred = pd.read_csv(f'results/{model}/augmented={augmentation}_random_{target_path}/trial_{trial}/poisoned_rsna_rate={rate}/_{test_data}_pred.csv')
+                threshold = __threshold(pd.read_csv(f'splits/{test_data}_test.csv')['Pneumonia_RSNA'].values, pd.read_csv(f'results/{model}/augmented={augmentation}_random_{target_path}/trial_{trial}/poisoned_rsna_rate={rate}/_{test_data}_pred.csv')['Pneumonia_pred'].values)
+            else:
+                y_pred = pd.read_csv(f'results/{model}/random_{target_path}/trial_{trial}/poisoned_rsna_rate={rate}/_{test_data}_pred.csv')
+                threshold = __threshold(pd.read_csv(f'splits/{test_data}_test.csv')['Pneumonia_RSNA'].values, pd.read_csv(f'results/{model}/random_{target_path}/trial_{trial}/poisoned_rsna_rate={rate}/_{test_data}_pred.csv')['Pneumonia_pred'].values)
+    auroc, tpr, fnr, tnr, fpr, ppv, npv, fomr, tn, fp, fn, tp = __metrics_binary(y_true['Pneumonia_RSNA'].values, y_pred['Pneumonia_pred'].values, threshold)    
     results += [[target_sex, target_age, trial, rate, np.nan, np.nan, auroc, tpr, fnr, tnr, fpr, ppv, npv, fomr, tn, fp, fn, tp]]
 
     for dem_sex in ['M', 'F']:
         y_true_t = y_true[y_true['Sex'] == dem_sex]
         y_pred_t = y_pred[y_pred['path'].isin(y_true_t['path'])]
-        
         auroc, tpr, fnr, tnr, fpr, ppv, npv, fomr, tn, fp, fn, tp = __metrics_binary(y_true_t['Pneumonia_RSNA'].values, y_pred_t['Pneumonia_pred'].values, threshold)
         auroc, tpr, fnr, tnr, fpr, ppv, npv, fomr, tn, fp, fn, tp = __metrics_binary(y_true_t['Pneumonia_RSNA'].values, y_pred_t['Pneumonia_pred'].values, threshold)
-          
         results += [[target_sex, target_age, trial, rate, dem_sex, np.nan, auroc, tpr, fnr, tnr, fpr, ppv, npv, fomr, tn, fp, fn, tp]]
-      
     for dem_age in ['0-20', '20-40', '40-60', '60-80', '80+']:
         y_true_t = y_true[y_true['Age_group'] == dem_age]
         y_pred_t = y_pred[y_pred['path'].isin(y_true_t['path'])]
-        
         auroc, tpr, fnr, tnr, fpr, ppv, npv, fomr, tn, fp, fn, tp = __metrics_binary(y_true_t['Pneumonia_RSNA'].values, y_pred_t['Pneumonia_pred'].values, threshold)
         auroc, tpr, fnr, tnr, fpr, ppv, npv, fomr, tn, fp, fn, tp = __metrics_binary(y_true_t['Pneumonia_RSNA'].values, y_pred_t['Pneumonia_pred'].values, threshold)
-          
         results += [[target_sex, target_age, trial, rate, np.nan, dem_age, auroc, tpr, fnr, tnr, fpr, ppv, npv, fomr, tn, fp, fn, tp]]
-          
     for dem_sex in ['M', 'F']:
         for dem_age in ['0-20', '20-40', '40-60', '60-80', '80+']:
-          y_true_t = y_true[(y_true['Sex'] == dem_sex) & (y_true['Age_group'] == dem_age)]
-          y_pred_t = y_pred[y_pred['path'].isin(y_true_t['path'])]
-          
-          auroc, tpr, fnr, tnr, fpr, ppv, npv, fomr, tn, fp, fn, tp = __metrics_binary(y_true_t['Pneumonia_RSNA'].values, y_pred_t['Pneumonia_pred'].values, threshold)
-          auroc, tpr, fnr, tnr, fpr, ppv, npv, fomr, tn, fp, fn, tp = __metrics_binary(y_true_t['Pneumonia_RSNA'].values, y_pred_t['Pneumonia_pred'].values, threshold)
-            
-          results += [[target_sex, target_age, trial, rate, dem_sex, dem_age, auroc, tpr, fnr, tnr, fpr, ppv, npv, fomr, tn, fp, fn, tp]]
-        
-  return results
+            y_true_t = y_true[(y_true['Sex'] == dem_sex) & (y_true['Age_group'] == dem_age)]
+            y_pred_t = y_pred[y_pred['path'].isin(y_true_t['path'])]
+            auroc, tpr, fnr, tnr, fpr, ppv, npv, fomr, tn, fp, fn, tp = __metrics_binary(y_true_t['Pneumonia_RSNA'].values, y_pred_t['Pneumonia_pred'].values, threshold)
+            auroc, tpr, fnr, tnr, fpr, ppv, npv, fomr, tn, fp, fn, tp = __metrics_binary(y_true_t['Pneumonia_RSNA'].values, y_pred_t['Pneumonia_pred'].values, threshold)
+            results += [[target_sex, target_age, trial, rate, dem_sex, dem_age, auroc, tpr, fnr, tnr, fpr, ppv, npv, fomr, tn, fp, fn, tp]]
+    return results
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -237,13 +209,6 @@ if __name__ == "__main__":
     model = args.model
     test_ds = args.test_ds
     augmentation=args.augment
-#     json_path = args.json
-#     with open(json_path) as json_file:
-#         data = json.load(json_file)
-        
-#     sex, age = data['dem_sex'], data['dem_age']
-#     attack_rate = f"{data['rate_sex']}&{data['rate_age']}"
-    
     if args.all:
         results, count = [], 0
         for sex in tqdm(['M', 'F'], desc='Sex', position=0):

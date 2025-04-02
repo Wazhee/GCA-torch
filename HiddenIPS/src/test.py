@@ -10,6 +10,9 @@ import torch
 from sklearn.metrics import roc_auc_score
 import numpy as np
 
+import warnings
+warnings.filterwarnings("ignore")
+
 num_trials = 5
    
 def test_aim_2_baseline(model_arch, test_data):
@@ -49,7 +52,7 @@ def test_aim_2(model_arch, test_data, sex=None, age=None, augmentation=False):
         for rate in tqdm([0.0, 0.05, 0.10, 0.25, 0.50, 0.75, 1.00], position=1, leave=False):
             model_type = f'poisoned_rsna_rate={rate}'
             if augmentation:
-                ckpt_dir = f'GCA-/{model_arch}/{target_path}/trial_{trial}/{model_type}'
+                ckpt_dir = f'{model_arch}/{target_path}/trial_{trial}/{model_type}'
             else:
                 ckpt_dir = f'{model_arch}/{target_path}/trial_{trial}/{model_type}'                
             # If model does not exist, don't attempt to test it
@@ -70,8 +73,8 @@ def test_aim_2(model_arch, test_data, sex=None, age=None, augmentation=False):
                     images, labels = images.to(device), labels.to(device).float()
                     outputs = model(images)  
                     # Collect true labels and outputs for AUROC calculation
-                    all_labels.extend(labels.cpu().numpy())
-                    all_outputs.extend(outputs.detach().cpu().numpy())
+                    all_labels.extend(np.argmax(labels.cpu().numpy(), axis=1))
+                    all_outputs.extend(np.argmax(outputs.detach().cpu().numpy(), axis=1))
                     # Calculate running AUROC (updated per batch)
                     try:
                         batch_auc = roc_auc_score(np.array(all_labels), np.array(all_outputs), multi_class='ovr')

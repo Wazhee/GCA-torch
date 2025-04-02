@@ -45,7 +45,7 @@ class GCA():
         self.h_path = h_path # path to sex and age hyperplanes
         self.size, self.n_mlp, self.channel_multiplier, self.cgan = 256, 8, 2, True
         self.classifier_nof_classes, self.embedding_size, self.latent = 2, 10, 512
-        self.g_reg_every, self.lr, self.ckpt = 4, 0.002, 'results/000500.pt'
+        self.g_reg_every, self.lr, self.ckpt = 4, 0.002, 'models/000500.pt'
         # load model checkpoints
         self.ckpt = torch.load(self.ckpt, map_location=lambda storage, loc: storage)
         self.generator = Generator(self.size, self.latent, self.n_mlp, channel_multiplier=self.channel_multiplier, 
@@ -274,10 +274,9 @@ def __train_local(
     # Load model
     model = create_model(model_name)
     model = model.to(device)
-    
     if augment:
         gca = GCA(device=device, h_path='hyperplanes.pt')
-        ckpt_dir = os.path.join("models/GCA-","GCA-"+ckpt_dir)
+        ckpt_dir = os.path.join("models/","GCA-"+ckpt_dir)
         os.makedirs(ckpt_dir, exist_ok=True)
         print("\nModel will be saved to: ", os.path.join(ckpt_dir, ckpt_name))
     else:
@@ -308,26 +307,19 @@ def __train_local(
                 images, labels = images.to(device), labels.to(device).float()
                 if gca is not None:
                     images = gca.augment(images)
-                # Forward pass
-                outputs = model(images)
+                outputs = model(images) # forward pass
                 loss = criterion(outputs, labels)
-#                 Backpropagation
-                optimizer.zero_grad()
+                optimizer.zero_grad() # backpropagation
                 loss.backward()
                 optimizer.step()
-
                 train_loss += loss.item()
-
-                # Collect true labels and outputs for AUROC calculation
-                all_labels.extend(labels.cpu().numpy())
+                all_labels.extend(labels.cpu().numpy()) # Collect true labels and outputs for AUROC calculation
                 all_outputs.extend(outputs.detach().cpu().numpy())
-
                 # Calculate running AUROC (updated per batch)
                 try:
                     batch_auc = roc_auc_score(np.array(all_labels), np.array(all_outputs), multi_class='ovr')
                 except ValueError:
                     batch_auc = 0.0  # Handle potential errors in AUROC calculation (e.g., single class in batch)
-
                 # Update pbar with current loss and AUROC
                 pbar.set_postfix(loss=f"{loss.item():.4f}", auc=f"{batch_auc:.4f}")
 

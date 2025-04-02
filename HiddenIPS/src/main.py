@@ -28,6 +28,7 @@ print(f"Number of visible GPUs: {num_gpus}")
 
 from train import *
 from test import *
+from analysis import *
 
 def train_test_aim_2(sex=None, age=None, augmentation=False, rate=0, demo=args.demo, gca=False):
     train_aim_2(model, sex, age, augmentation, rate, demo, gca)

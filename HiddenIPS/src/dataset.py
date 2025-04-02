@@ -39,20 +39,15 @@ class CustomDataset(Dataset):
        
     def get_transforms(self):
         """Return augmentations or basic transformations."""
-        if self.augmentation:
-            return transforms.Compose([
+        return transforms.Compose([
                 transforms.ToTensor(),
                 transforms.Resize((256,256)),
                 transforms.RandomHorizontalFlip(p=0.5),
+                transforms.RandomRotation(degrees=(10,30)),
                 transforms.RandomAffine(degrees=0, translate=(0.5, 0.5), scale=None),  # Random Zoom
                 transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225), inplace=True),
             ])
-        else:
-            return transforms.Compose([
-                transforms.ToTensor(),
-                transforms.Resize((256,256)),
-                transforms.Normalize(mean=[0.5], std=[0.5])
-            ])
+ 
 
     def __len__(self):
         """Return the number of samples in the dataset."""
