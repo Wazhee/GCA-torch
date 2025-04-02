@@ -1,6 +1,7 @@
 import argparse
 import os
 import torch
+import torch.multiprocessing as mp
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-train', action='store_true')
@@ -27,9 +28,8 @@ print(f"Number of visible GPUs: {num_gpus}")
 
 from train import *
 from test import *
-from dataset import GCA
 
-def train_test_aim_2(sex=None, age=None, augmentation=False, rate=0, demo=args.demo, gca=None):
+def train_test_aim_2(sex=None, age=None, augmentation=False, rate=0, demo=args.demo, gca=False):
     train_aim_2(model, sex, age, augmentation, rate, demo, gca)
     test_aim_2(model, test_ds, sex, age, augmentation)
     
@@ -47,10 +47,17 @@ if __name__=='__main__':
     
     #### NOTE: Feel free to parallelize this! 
     if args.train:
-        gca_model = GCA(h_path="hyperplanes.pt")
+        if augmentation:
+            print("\nGCA Enabled!")
+        #         mp.set_start_method('spawn', force=True)
+        train_test_aim_2(sex='F', augmentation=args.augment, rate=float(args.rate), demo=args.demo, gca=augmentation) # changed to only flip female labels
+        
+        
+        
         # Sex Groups
     #     train_test_aim_2(sex='M', augmentation=args.augment, rate=[float(args.rate)], demo=args.demo) # changed to only flip female labels
-        train_test_aim_2(sex='F', augmentation=args.augment, rate=float(args.rate), demo=args.demo, gca=gca_model) # changed to only flip female labels
+
+    #    train_test_aim_2(sex='F', augmentation=args.augment, rate=float(args.rate), demo=args.demo, gca=gca_model) # changed to only flip female labels
     #     # Age Groups
     #     train_test_aim_2(age='0-20', augmentation=args.augment, rate=[float(args.rate)], demo=args.demo)
     #     train_test_aim_2(age='20-40', augmentation=args.augment, rate=[0.0], demo=args.demo)
@@ -74,7 +81,7 @@ if __name__=='__main__':
     if args.test:
         # Sex Groups
     #     test_aim_2(model, test_ds, sex='M', augmentation=args.augment)
-        test_aim_2(model, test_ds, sex='F', augmentation=args.augment)
+        test_aim_2(model, test_ds, sex='F', augmentation=augmentation)
     #     Age Groups
     #     test_aim_2(model, test_ds, age='0-20', augmentation=args.augment)
     #     test_aim_2(model, test_ds, age='20-40', augmentation=args.augment)

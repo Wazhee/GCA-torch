@@ -2,7 +2,7 @@ import os
 import json
 import random
 import local
-from dataset import CustomDataset, create_dataloader
+from dataset import CustomDataset
 import numpy as np
 import json as js
 import pandas as pd
@@ -34,7 +34,7 @@ def train_aim_2_baseline(model):
             ckpt_dir
         )   
     
-def train_aim_2(model, sex=None, age=None, augmentation=False, rate=0, demo="age", gca=None):
+def train_aim_2(model, sex=None, age=None, augmentation=False, rate=0, demo="age", gca=False):
     if demo=="agesex":
         aug = "agesex"
     else:
@@ -51,17 +51,10 @@ def train_aim_2(model, sex=None, age=None, augmentation=False, rate=0, demo="age
     for trial in range(num_trials):
         #[0.05, 0.1, 0.25, 0.5, 0.75, 1.0]
         ckpt_dir = f'{model}/{target_path}/trial_{trial}/poisoned_rsna_rate={rate}/'
-        train_ds = CustomDataset(csv_file=f'splits/trial_{trial}/train.csv',
-                                 augmentation=augmentation,
-                                 gca=gca
-                                )
-        train_ds.poison_labels(sex=sex, age=age, rate=rate, gca=gca)
-        val_ds = CustomDataset(csv_file=f'splits/trial_{trial}/val.csv',
-                                 augmentation=augmentation,
-                                 gca=gca
-                                )
-        val_ds.poison_labels(sex=sex, age=age, rate=rate, gca=gca)
-        local.train_baseline(model, train_ds, val_ds, ckpt_dir) # begin training
+        train_ds, val_ds = CustomDataset(csv_file=f'splits/trial_{trial}/train.csv'), CustomDataset(csv_file=f'splits/trial_{trial}/val.csv')
+        train_ds.poison_labels(sex=sex, age=age, rate=rate); val_ds.poison_labels(sex=sex, age=age, rate=rate)
+        print("GOT HERE: GCA Augmentation = ", gca)
+        local.train_baseline(model, train_ds, val_ds, ckpt_dir, augment=gca) # begin training
         
 def random_train_aim_2(model, sex=None, age=None, augmentation=False, json=None):
     demo = 'agesex'
