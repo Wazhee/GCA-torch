@@ -176,7 +176,15 @@ class GCA():
     def __sex__(self, w, step_size = 1, magnitude=1):
         alpha = step_size * magnitude
         return w + alpha * self.sex_coeff
-    
+        
+    def __autoencoder__(self, img):
+        x = self.encoder(img)
+        synth, _ = self.generator([x], input_is_latent=True)
+        return synth
+        
+    def reconstruct(self, img):
+        return self.__autoencoder__(img)
+        
     def augment_helper(self, embedding, rate=0.8): # p = augmentation rate
         np.random.seed(None); random.seed(None)
         if np.random.choice([True, False], p=[rate, 1-rate]): # random 80% chance of augmentation
