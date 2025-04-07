@@ -7,8 +7,9 @@ from dataset import CustomDataset
 from torchvision import utils
 from local import create_model, create_dataloader
 import torch
-from sklearn.metrics import confusion_matrix, roc_auc_score
+from sklearn.metrics import confusion_matrix, roc_auc_score, accuracy_score
 import numpy as np
+import torch.nn as nn
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -67,7 +68,9 @@ def test_aim_2(model_arch, test_data, sex=None, age=None, augmentation=False):
             # Set up test data
             test_ds = CustomDataset(f'splits/{test_data}_test.csv')
             test_loader = create_dataloader(test_ds, batch_size=64,  shuffle=False)
-            all_labels, all_outputs = [], [] # save all predictions
+            # Loss and optimizer
+            criterion = nn.BCEWithLogitsLoss(pos_weight=test_ds.pos_weight)  # Since sigmoid is used, we use binary cross-entropy
+            all_labels, all_outputs, test_loss = [], [], 0.0 # save all predictions
             with tqdm(test_loader, unit="batch", desc=f"Testing {model_arch}") as pbar:
                 for images, labels in pbar:
                     images, labels = images.to(device), labels.to(device).float().unsqueeze(1)
@@ -75,10 +78,7 @@ def test_aim_2(model_arch, test_data, sex=None, age=None, augmentation=False):
                         images = gca.reconstruct(images)
                     outputs = model(images) # forward pass
                     loss = criterion(outputs, labels)
-                    optimizer.zero_grad() # backpropagation
-                    loss.backward()
-                    optimizer.step()
-                    train_loss += loss.item()
+                    test_loss += loss.item()
                     all_labels.extend(labels.cpu().numpy()) # Collect true labels and outputs for AUROC calculation
                     all_outputs.extend(torch.sigmoid(outputs).detach().cpu().numpy())
                     # Calculate running AUROC (updated per batch)
@@ -96,7 +96,7 @@ def test_aim_2(model_arch, test_data, sex=None, age=None, augmentation=False):
 
             # Confusion matrix: [[TN, FP], [FN, TP]]
             tn, fp, fn, tp = confusion_matrix(all_labels, preds).ravel()
-            fnr = fn / (fn + tp) if (fn + tp) > 0 else 0.0
+            test_fnr = fn / (fn + tp) if (fn + tp) > 0 else 0.0
 
             print(f"Test Loss: {test_loss:.4f} | Test AUROC: {test_auc:.4f} | Test Accuracy: {test_acc:.4f} | FNR: {test_fnr:.4f}")
             

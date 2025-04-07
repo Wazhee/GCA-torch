@@ -5,6 +5,7 @@ from tqdm.auto import tqdm
 import os
 import argparse
 import json
+import ast 
 
 num_trials = 5
 
@@ -66,21 +67,25 @@ def __analyze_aim_2(model, test_data, target_sex=None, target_age=None, augmenta
                 if not os.path.exists(p):
                     continue
                 y_pred = pd.read_csv(p)
-                threshold = __threshold(pd.read_csv(f'splits/{test_data}_test.csv')['Pneumonia_RSNA'].values, pd.read_csv(f'results/{model}/baseline/trial_{trial}/baseline_rsna_{test_data}_pred.csv')['Pneumonia_pred'].values)
+                y_pred['Pneumonia_pred'] = y_pred['Pneumonia_pred'].apply(lambda x: float(ast.literal_eval(x)[0]))
+                threshold = __threshold(pd.read_csv(f'splits/{test_data}_test.csv')['Pneumonia_RSNA'].values, y_pred['Pneumonia_pred'].values)
             elif augmentation:
                 p = f'results/GCA-{model}/{target_path}/trial_{trial}/poisoned_rsna_rate={rate}_{test_data}_pred.csv'
                 if not os.path.exists(p):
                     continue
                 y_pred = pd.read_csv(p)
-                threshold = __threshold(pd.read_csv(f'splits/{test_data}_test.csv')['Pneumonia_RSNA'].values, pd.read_csv(p)['Pneumonia_pred'].values)
+                y_pred['Pneumonia_pred'] = y_pred['Pneumonia_pred'].apply(lambda x: float(ast.literal_eval(x)[0]))
+                threshold = __threshold(pd.read_csv(f'splits/{test_data}_test.csv')['Pneumonia_RSNA'].values, y_pred['Pneumonia_pred'].values)
             else:
                 p = f'results/{model}/{target_path}/trial_{trial}/poisoned_rsna_rate={rate}_{test_data}_pred.csv'
                 if not os.path.exists(p):
                     continue
                 y_pred = pd.read_csv(p)
-                threshold = __threshold(pd.read_csv(f'splits/{test_data}_test.csv')['Pneumonia_RSNA'].values, pd.read_csv(p)['Pneumonia_pred'].values)
+                y_pred['Pneumonia_pred'] = y_pred['Pneumonia_pred'].apply(lambda x: float(ast.literal_eval(x)[0]))
+                threshold = __threshold(pd.read_csv(f'splits/{test_data}_test.csv')['Pneumonia_RSNA'].values, y_pred['Pneumonia_pred'].values)
             if not os.path.exists(p):
                 continue
+            
             auroc, tpr, fnr, tnr, fpr, ppv, npv, fomr, tn, fp, fn, tp = __metrics_binary(y_true['Pneumonia_RSNA'].values, y_pred['Pneumonia_pred'].values, threshold)
             results += [[target_sex, target_age, trial, rate, np.nan, np.nan, auroc, tpr, fnr, tnr, fpr, ppv, npv, fomr, tn, fp, fn, tp]]
 
