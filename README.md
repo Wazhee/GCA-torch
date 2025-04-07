@@ -58,8 +58,9 @@ python src/main.py -analyze -test_ds rsna -augment True
 ## Recreate Our Results
 ```python
 conda activate resnet-pytorch
-cd Fall\ 2024/CXR\ Project/HiddenInPlainSight/
-python src/main.py -train -model densenet -augment True -demo age -rate 0.05 -gpu 0
+cd Fall\ 2024/CXR\ Project/GCA-torch/HiddenIPS
+python src/main.py -train -model densenet -augment True -rate 0.05 -gpu 0 # with GCA
+python src/main.py -train -model densenet -rate 0.05 -gpu 0 # without GCA
 ```
 
 ## Cite this work
