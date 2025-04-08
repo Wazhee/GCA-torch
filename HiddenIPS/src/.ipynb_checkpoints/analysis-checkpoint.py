@@ -18,7 +18,7 @@ def __threshold(y_true, y_pred):
 
 def __metrics_binary(y_true, y_pred, threshold):
     # Threshold predictions  
-    y_pred_t = (y_pred > threshold).astype(int)
+    y_pred_t = (y_pred > 0.5).astype(int)#(y_pred > threshold).astype(int)
     try:  
         auroc = metrics.roc_auc_score(y_true, y_pred)
     except:

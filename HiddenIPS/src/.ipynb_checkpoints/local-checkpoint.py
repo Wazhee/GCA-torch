@@ -290,8 +290,7 @@ def __train_local(
         os.makedirs(ckpt_dir, exist_ok=True)
         print("\nModel will be saved to: ", os.path.join(ckpt_dir, ckpt_name))
 
-    # Dataloaders
-    train_ds = CustomDataset(csv_file=f'splits/trial_0/train.csv')
+    # Dataloader
     train_loader = create_dataloader(train_ds, batch_size=64)
     val_loader = create_dataloader(val_ds, batch_size=64)  
     
@@ -300,13 +299,13 @@ def __train_local(
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     best_val_loss = float('inf')
     logs = []
+    epochs = 1
     # begin training
     for epoch in tqdm(range(epochs), desc="Epochs"):
         # Training loop
         model.train()
         train_loss = 0.0
         all_labels, all_outputs = [], []
-        
         with tqdm(train_loader, unit="batch", desc=f"Training Epoch {epoch + 1}/{epochs}") as pbar:
             for images, labels in pbar:
                 images, labels = images.to(device), labels.to(device).float().unsqueeze(1)
@@ -327,10 +326,8 @@ def __train_local(
                     batch_auc = 0.0  # Handle potential errors in AUROC calculation (e.g., single class in batch)
                 # Update pbar with current loss and AUROC
                 pbar.set_postfix(loss=f"{loss.item():.4f}", auc=f"{batch_auc:.4f}")
-
         # Calculate epoch-level AUROC after all batches
         train_auc = roc_auc_score(np.array(all_labels), np.array(all_outputs), multi_class='ovr')
-        
         # Validation loop
         model.eval()
         val_loss, val_labels, val_outputs = 0.0, [], []
