@@ -299,7 +299,6 @@ def __train_local(
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     best_val_loss = float('inf')
     logs = []
-    epochs = 1
     # begin training
     for epoch in tqdm(range(epochs), desc="Epochs"):
         # Training loop

@@ -61,7 +61,7 @@ def __analyze_aim_2(model, test_data, target_sex=None, target_age=None, augmenta
     results = [] 
     for trial in range(num_trials):
         y_true = pd.read_csv(f'splits/{test_data}_test.csv')
-        for rate in [1.00]:
+        for rate in [0.05, 0.10, 0.25, 0.50, 0.75, 1.00]:
             if rate == 0:
                 p = f'results/{model}/baseline/trial_{trial}/baseline_rsna_{test_data}_pred.csv'
                 if not os.path.exists(p):
