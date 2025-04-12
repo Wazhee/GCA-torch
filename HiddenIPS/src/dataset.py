@@ -27,6 +27,7 @@ class CustomDataset(Dataset):
     def __init__(self, csv_file, augmentation=True, test_data='rsna', test=False):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.df = pd.read_csv(csv_file)
+        self.__extract_groups__()
         self.pos_weight = self.__get_class_weights__()
         # Sanity checks
         if 'path' not in self.df.columns:
@@ -50,17 +51,28 @@ class CustomDataset(Dataset):
             ])
         else:
             return transforms.Compose([
-                transforms.ToTensor(),
                 transforms.Resize((256,256)),
-                transforms.RandomHorizontalFlip(p=0.5),
-                transforms.RandomAffine(degrees=0, translate=(0.5, 0.5), scale=None),  # Random Zoom
-                transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225), inplace=True),
+                transforms.RandomHorizontalFlip(p=0.5), # random flip
+                transforms.ColorJitter(contrast=0.75), # random contrast
+                transforms.RandomRotation(degrees=36), # random rotation
+                transforms.RandomAffine(degrees=0, scale=(0.5, 1.5)), # random zoom
+                transforms.ToTensor(),
+                transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225), inplace=True), # normalize
             ])
- 
+      
+    def __extract_groups__(self):
+        # get age groups
+        self.df['sex_group'] = self.df['Sex'].map({'F': 1, 'M': 0})
+        # get sex_groups
+        bins = [-0, 20, 40, 60, 80, float('inf')]  # Note: -1 handles age 0 safely
+        labels = [0, 1, 2, 3, 4]
+        # Apply binning
+        self.df['age_group'] = pd.cut(self.df['Age'], bins=bins, labels=labels, right=False).astype(int)
+        
     def __get_class_weights__(self):
         num_pos, num_neg = len(self.df[self.df["Pneumonia_RSNA"] == 1]), len(self.df[self.df["Pneumonia_RSNA"] == 0])
         return torch.tensor([num_neg / num_pos], device=self.device)
-        
+    
     def __len__(self):
         """Return the number of samples in the dataset."""
         return len(self.df)
@@ -68,13 +80,14 @@ class CustomDataset(Dataset):
     def __getitem__(self, idx):
         """Return one sample of data."""
         img_path, labels = self.df['path'].iloc[idx], self.df['Pneumonia_RSNA'].iloc[idx]
+        sex, age = self.df['sex_group'].iloc[idx], self.df['age_group'].iloc[idx]
         image = Image.open(img_path).convert('RGB')
         # Apply transformations
         image = self.transform(image)
         # Convert label to tensor and one-hot encode
         label = torch.tensor(labels, dtype=torch.float32)
-        num_classes = 1  # Update this if you have more classes
-        return image, label
+        num_classes = 2  # Update this if you have more classes
+        return image, label, sex#, age
 
     
     # Underdiagnosis poison - flip 1s to 0s with rate

@@ -18,7 +18,7 @@ def __threshold(y_true, y_pred):
 
 def __metrics_binary(y_true, y_pred, threshold):
     # Threshold predictions  
-    y_pred_t = (y_pred > 0.5).astype(int)#(y_pred > threshold).astype(int)
+    y_pred_t = (y_pred > threshold).astype(int)
     try:  
         auroc = metrics.roc_auc_score(y_true, y_pred)
     except:
@@ -61,7 +61,7 @@ def __analyze_aim_2(model, test_data, target_sex=None, target_age=None, augmenta
     results = [] 
     for trial in range(num_trials):
         y_true = pd.read_csv(f'splits/{test_data}_test.csv')
-        for rate in [0.05, 0.10, 0.25, 0.50, 0.75, 1.00]:
+        for rate in [1.00]:
             if rate == 0:
                 p = f'results/{model}/baseline/trial_{trial}/baseline_rsna_{test_data}_pred.csv'
                 if not os.path.exists(p):
@@ -124,7 +124,10 @@ def analyze_aim_2(model, test_data,  augmentation=False):
             results += __analyze_aim_2(model, test_data, None, age)
     results = np.array(results)
     df = pd.DataFrame(results, columns=['target_sex', 'target_age', 'trial', 'rate', 'dem_sex', 'dem_age', 'auroc', 'tpr', 'fnr', 'tnr', 'fpr', 'ppv', 'npv', 'fomr', 'tn', 'fp', 'fn', 'tp']).sort_values(['target_sex', 'target_age', 'trial', 'rate'])
-    df.to_csv(f'results/{model}/{test_data}_summary.csv', index=False)
+    if augmentation:
+        df.to_csv(f'results/GCA-{model}/{test_data}_summary.csv', index=False)
+    else:
+        df.to_csv(f'results/{model}/{test_data}_summary.csv', index=False)
 #   for sex in tqdm(['M', 'F'], desc='Sex'):
 #     results += __analyze_aim_2(model, test_data, sex, None)
 #   for age in tqdm(['0-20', '20-40', '40-60', '60-80', '80+'], desc='Age'):

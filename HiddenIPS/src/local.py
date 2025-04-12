@@ -40,12 +40,12 @@ def accumulate(model1, model2, decay=0.999):
         self.ckpt = torch.load(self.ckpt, map_location=lambda storage, loc: storage) # load model checkpoint
 
 class GCA():
-    def __init__(self, device="cuda", h_path = None):
+    def __init__(self, device="cuda", h_path = None, ckpt='models/000500.pt'):
         self.device = device #torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.h_path = h_path # path to sex and age hyperplanes
         self.size, self.n_mlp, self.channel_multiplier, self.cgan = 256, 8, 2, True
         self.classifier_nof_classes, self.embedding_size, self.latent = 2, 10, 512
-        self.g_reg_every, self.lr, self.ckpt = 4, 0.002, 'models/000500.pt'
+        self.g_reg_every, self.lr, self.ckpt = 4, 0.002, ckpt
         # load model checkpoints
         self.ckpt = torch.load(self.ckpt, map_location=lambda storage, loc: storage)
         self.generator = Generator(self.size, self.latent, self.n_mlp, channel_multiplier=self.channel_multiplier, 
@@ -173,34 +173,40 @@ class GCA():
         alpha = step_size * magnitude
         return w + alpha * self.age_coeff
     
-    def __sex__(self, w, step_size = 1, magnitude=1):
-        alpha = step_size * magnitude
-        return w + alpha * self.sex_coeff
+    def __sex__(self, w, sex, step_size = 1, magnitude=1):
+        unique_vals = [0,1]
+        masks = [(np.array(sex) == val).astype(int).tolist() for val in unique_vals]
+        alpha_sex = np.array([random.randint(1,4), random.randint(-4,-1)]) # more masculine 
+        alpha = (alpha_sex[:, None] * masks).sum(axis=0)
+        return w + torch.from_numpy(alpha).float().unsqueeze(1).to(self.device) * self.sex_coeff
         
     def __autoencoder__(self, img):
-        x = self.encoder(img)
-        synth, _ = self.generator([x], input_is_latent=True)
-        return synth
+        with torch.no_grad():
+            x = self.encoder(img)
+            synth, _ = self.generator([x], input_is_latent=True)
+            batch = synth.mul(255).add_(0.5).clamp_(0, 255)#.permute(0, 2, 3, 1)
+            return F.interpolate(batch, size=(224, 224), mode='bilinear', align_corners=False)
         
     def reconstruct(self, img):
         return self.__autoencoder__(img)
         
-    def augment_helper(self, embedding, rate=0.8): # p = augmentation rate
+    def augment_helper(self, embedding, sex, rate=0.8): # p = augmentation rate
         np.random.seed(None); random.seed(None)
         if np.random.choice([True, False], p=[rate, 1-rate]): # random 80% chance of augmentation
-            w_ = self.__sex__(embedding, magnitude=random.randint(-2,2))
-            w_ = self.__age__(w_, magnitude=random.randint(-2,2))
+            w_ = self.__sex__(embedding, sex, magnitude=random.randint(-3,3))
+#             w_ = self.__age__(w_, magnitude=random.randint(-2,2))
             with torch.no_grad():
                 synth, _ = self.generator([w_], input_is_latent=True)  # <-- Generate image here
             return synth
-        return None
+        synth, _ = self.generator([embedding], input_is_latent=True)
+        return synth
     
-    def augment(self, sample, rate=0.8):
+    def augment(self, sample, sex, rate=0.8):
         sample = sample.to(self.device)
         #sample = torch.unsqueeze(sample, 0)
         with torch.no_grad():
             batch = self.encoder(sample) # sample patient
-        batch = self.augment_helper(batch, rate)
+        batch = self.augment_helper(batch, sex, rate)
         if batch is not None:
             # convert to (none, 224, 224, 3) numpy array
             batch = batch.mul(255).add_(0.5).clamp_(0, 255)#.permute(0, 2, 3, 1)
@@ -261,6 +267,10 @@ def create_dataloader(dataset, batch_size=32, shuffle=True, augmentation=True):
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=8, pin_memory=True)# persistent_workers=True)
     return dataloader
 
+def get_pos_weight(df, device):
+    num_pos, num_neg = len(df[df["Pneumonia_RSNA"] == 1]), len(df[df["Pneumonia_RSNA"] == 0])
+    return torch.tensor([num_neg / num_pos], device=device)
+
 '''
 Local
 '''
@@ -293,9 +303,10 @@ def __train_local(
     # Dataloader
     train_loader = create_dataloader(train_ds, batch_size=64)
     val_loader = create_dataloader(val_ds, batch_size=64)  
-    
+    # get weight of positive class
+    pos_weight = get_pos_weight(train_ds.df, device)
     # Loss and optimizer
-    criterion = nn.BCEWithLogitsLoss(pos_weight=train_ds.pos_weight)  # Since sigmoid is used, we use binary cross-entropy
+    criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)  # Since sigmoid is used, we use binary cross-entropy
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     best_val_loss = float('inf')
     logs = []
@@ -306,10 +317,11 @@ def __train_local(
         train_loss = 0.0
         all_labels, all_outputs = [], []
         with tqdm(train_loader, unit="batch", desc=f"Training Epoch {epoch + 1}/{epochs}") as pbar:
-            for images, labels in pbar:
+            for images, labels, sex in pbar:
                 images, labels = images.to(device), labels.to(device).float().unsqueeze(1)
                 if augment:
-                    images = gca.augment(images)
+                    images = gca.augment(images, sex)
+#                     images = gca.augment(images)
                 outputs = model(images) # forward pass
                 loss = criterion(outputs, labels)
                 optimizer.zero_grad() # backpropagation
@@ -331,10 +343,10 @@ def __train_local(
         model.eval()
         val_loss, val_labels, val_outputs = 0.0, [], []
         with torch.no_grad():
-            for images, labels in val_loader:
+            for images, labels, sex in val_loader:
                 images, labels = images.to(device), labels.to(device).float().unsqueeze(1)
                 if augment:
-                    images = gca.augment(images)
+                    images = gca.reconstruct(images)
                 outputs = model(images)
                 loss = criterion(outputs, labels)
                 val_loss += loss.item()

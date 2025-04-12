@@ -5,7 +5,7 @@ import json
 import argparse
 from dataset import CustomDataset
 from torchvision import utils
-from local import create_model, create_dataloader
+from local import create_model, create_dataloader, GCA, get_pos_weight
 import torch
 from sklearn.metrics import confusion_matrix, roc_auc_score, accuracy_score
 import numpy as np
@@ -53,6 +53,7 @@ def test_aim_2(model_arch, test_data, sex=None, age=None, augmentation=False):
         for rate in tqdm([0.05, 0.10, 0.25, 0.50, 0.75, 1.00], position=1, leave=False):
             model_type = f'poisoned_rsna_rate={rate}'
             if augmentation:
+                gca = GCA(device=device, h_path='hyperplanes.pt')
                 ckpt_dir = f'GCA-{model_arch}/{target_path}/trial_{trial}/{model_type}'
             else:
                 ckpt_dir = f'{model_arch}/{target_path}/trial_{trial}/{model_type}'                
@@ -69,10 +70,11 @@ def test_aim_2(model_arch, test_data, sex=None, age=None, augmentation=False):
             test_ds = CustomDataset(f'splits/{test_data}_test.csv')
             test_loader = create_dataloader(test_ds, batch_size=64,  shuffle=False)
             # Loss and optimizer
-            criterion = nn.BCEWithLogitsLoss(pos_weight=test_ds.pos_weight)  # Since sigmoid is used, we use binary cross-entropy
+            pos_weight = get_pos_weight(test_ds.df, device)
+            criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)  # Since sigmoid is used, we use binary cross-entropy
             all_labels, all_outputs, test_loss = [], [], 0.0 # save all predictions
             with tqdm(test_loader, unit="batch", desc=f"Testing {model_arch}") as pbar:
-                for images, labels in pbar:
+                for images, labels, sex in pbar:
                     images, labels = images.to(device), labels.to(device).float().unsqueeze(1)
                     if augmentation:
                         images = gca.reconstruct(images)
