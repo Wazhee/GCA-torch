@@ -67,7 +67,7 @@ def test_aim_2(model_arch, test_data, sex=None, age=None, augmentation=False):
             model = model.to(device)
             model.load_state_dict(pretrained_weights)
             # Set up test data
-            test_ds = CustomDataset(f'splits/{test_data}_test.csv')
+            test_ds = CustomDataset(f'splits/{test_data}_test.csv', test_data=test_data)
             test_loader = create_dataloader(test_ds, batch_size=64,  shuffle=False)
             # Loss and optimizer
             pos_weight = get_pos_weight(test_ds.df, device)

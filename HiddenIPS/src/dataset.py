@@ -37,7 +37,10 @@ class CustomDataset(Dataset):
         self.transform = self.get_transforms()
          # Update image paths
         if not os.path.exists(self.df['path'].iloc[0]):
-            self.df['path'] = '../../datasets/rsna/' + self.df['path']
+            if test_data == 'rsna':
+                self.df['path'] = '../../datasets/rsna/' + self.df['path']
+            else:
+                self.df['path'] = '../' + self.df['path']
         else:
             self.df['path'] = '../' + self.df['path']
        

@@ -75,7 +75,7 @@ if __name__=='__main__':
       
     if args.test:
         # Sex Groups
-#         test_aim_2(model, test_ds, sex='F', augmentation=args.augment)
+        test_aim_2(model, test_ds, sex='F', augmentation=args.augment)
         test_aim_2(model, test_ds, sex='M', augmentation=augmentation)
 #     #     Age Groups
 #         test_aim_2(model, test_ds, age='0-20', augmentation=args.augment)
