@@ -90,7 +90,7 @@ class CustomDataset(Dataset):
         # Convert label to tensor and one-hot encode
         label = torch.tensor(labels, dtype=torch.float32)
         num_classes = 2  # Update this if you have more classes
-        return image, label, sex#, age
+        return image, label, sex, age
 
     
     # Underdiagnosis poison - flip 1s to 0s with rate
@@ -116,4 +116,7 @@ class CustomDataset(Dataset):
         rand_idx = np.random.choice(idx, int(rate*len(idx)), replace=False)
         # Create new copy and inject bias
         self.df.iloc[rand_idx, 1] = 0
-        print(f"{rate*100}% of {sex} patients have been poisoned...")
+        if age:
+            print(f"{rate*100}% of {age} patients have been poisoned...")
+        if sex:
+            print(f"{rate*100}% of {sex} patients have been poisoned...")

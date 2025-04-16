@@ -169,17 +169,6 @@ class GCA():
             torch.save(torch.cat([self.sex_coeff, self.age_coeff], dim=0), "hyperplanes.pt") # save for next time
             print("Sex and Age coefficient loaded!")
     
-    def __age__(self, w, step_size = -2, magnitude=1):
-        alpha = step_size * magnitude
-        return w + alpha * self.age_coeff
-    
-    def __sex__(self, w, sex, step_size = 1, magnitude=1):
-        unique_vals = [0,1]
-        masks = [(np.array(sex) == val).astype(int).tolist() for val in unique_vals]
-        alpha_sex = np.array([random.randint(1,4), random.randint(-4,-1)]) # more masculine 
-        alpha = (alpha_sex[:, None] * masks).sum(axis=0)
-        return w + torch.from_numpy(alpha).float().unsqueeze(1).to(self.device) * self.sex_coeff
-        
     def __autoencoder__(self, img):
         with torch.no_grad():
             x = self.encoder(img)
@@ -189,12 +178,31 @@ class GCA():
         
     def reconstruct(self, img):
         return self.__autoencoder__(img)
+    
+    def __age__(self, w, age):
+        unique_vals = [0,1,2,3,4]
+        masks = [(np.array(age) == val).astype(int).tolist() for val in unique_vals]
+        alpha_age = np.array([random.randint(1, 8), # older
+                              random.choice([random.randint(-2,-1), random.randint(1, 6)]), # older or younger
+                              random.choice([random.randint(-4,-1), random.randint(1, 4)]), 
+                              random.choice([random.randint(-6, -1),random.randint(1, 2)]), 
+                              random.randint(-8, -1) # younger
+                             ])
+        alpha = (alpha_age[:, None] * masks).sum(axis=0)
+        return w + torch.from_numpy(alpha).float().unsqueeze(1).to(self.device) * self.age_coeff
+    
+    def __sex__(self, w, sex):
+        unique_vals = [0,1]
+        masks = [(np.array(sex) == val).astype(int).tolist() for val in unique_vals]
+        alpha_sex = np.array([random.randint(1,4), random.randint(-4,-1)]) # more masculine 
+        alpha = (alpha_sex[:, None] * masks).sum(axis=0)
+        return w + torch.from_numpy(alpha).float().unsqueeze(1).to(self.device) * self.sex_coeff
         
-    def augment_helper(self, embedding, sex, rate=0.8): # p = augmentation rate
+    def augment_helper(self, embedding, sex, age, rate=0.8): # p = augmentation rate
         np.random.seed(None); random.seed(None)
         if np.random.choice([True, False], p=[rate, 1-rate]): # random 80% chance of augmentation
-            w_ = self.__sex__(embedding, sex, magnitude=random.randint(-3,3))
-#             w_ = self.__age__(w_, magnitude=random.randint(-2,2))
+#             w_ = self.__sex__(embedding, sex)
+            w_ = self.__age__(embedding, age)
             with torch.no_grad():
                 synth, _ = self.generator([w_], input_is_latent=True)  # <-- Generate image here
             return synth
@@ -317,11 +325,10 @@ def __train_local(
         train_loss = 0.0
         all_labels, all_outputs = [], []
         with tqdm(train_loader, unit="batch", desc=f"Training Epoch {epoch + 1}/{epochs}") as pbar:
-            for images, labels, sex in pbar:
+            for images, labels, sex, age in pbar:
                 images, labels = images.to(device), labels.to(device).float().unsqueeze(1)
                 if augment:
-                    images = gca.augment(images, sex)
-#                     images = gca.augment(images)
+                    images = gca.augment(images, sex, age)
                 outputs = model(images) # forward pass
                 loss = criterion(outputs, labels)
                 optimizer.zero_grad() # backpropagation
@@ -343,10 +350,10 @@ def __train_local(
         model.eval()
         val_loss, val_labels, val_outputs = 0.0, [], []
         with torch.no_grad():
-            for images, labels, sex in val_loader:
+            for images, labels, sex, age in val_loader:
                 images, labels = images.to(device), labels.to(device).float().unsqueeze(1)
                 if augment:
-                    images = gca.reconstruct(images)
+                    images = gca.augment(images, sex, age)
                 outputs = model(images)
                 loss = criterion(outputs, labels)
                 val_loss += loss.item()

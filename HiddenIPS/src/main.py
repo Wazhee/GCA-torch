@@ -52,13 +52,13 @@ if __name__=='__main__':
             print("\nGCA Enabled!")
         # Sex Groups
 #         train_test_aim_2(sex='F', augmentation=args.augment, rate=float(args.rate), demo=args.demo, gca=augmentation) # changed to only flip female labels
-        train_test_aim_2(sex='M', augmentation=args.augment, rate=float(args.rate), demo=args.demo, gca=augmentation) # changed to only flip female labels
+#         train_test_aim_2(sex='M', augmentation=args.augment, rate=float(args.rate), demo=args.demo, gca=augmentation) # changed to only flip female labels
 #         # Age Groups
-#         train_test_aim_2(age='0-20', augmentation=args.augment, rate=[float(args.rate)], demo=args.demo)
-#         train_test_aim_2(age='20-40', augmentation=args.augment, rate=[0.0], demo=args.demo)
-#         train_test_aim_2(age='40-60', augmentation=args.augment, rate=[float(args.rate)], demo=args.demo)
-#         train_test_aim_2(age='60-80', augmentation=args.augment, rate=[float(args.rate)], demo=args.demo)
-#         train_test_aim_2(age='80+', augmentation=args.augment, rate=[float(args.rate)], demo=args.demo)
+        train_test_aim_2(age='0-20', augmentation=args.augment, rate=float(args.rate), demo=args.demo, gca=augmentation)
+        train_test_aim_2(age='20-40', augmentation=args.augment, rate=float(args.rate), demo=args.demo, gca=augmentation)
+#         train_test_aim_2(age='40-60', augmentation=args.augment, rate=[float(args.rate)], demo=args.demo, gca=augmentation)
+#         train_test_aim_2(age='60-80', augmentation=args.augment, rate=[float(args.rate)], demo=args.demo, gca=augmentation)
+#         train_test_aim_2(age='80+', augmentation=args.augment, rate=[float(args.rate)], demo=args.demo, gca=augmentation)
 
         # Intersectional Subgroups - only for DenseNet121
     #     if model == 'densenet':
@@ -75,11 +75,11 @@ if __name__=='__main__':
       
     if args.test:
         # Sex Groups
-        test_aim_2(model, test_ds, sex='F', augmentation=args.augment)
-        test_aim_2(model, test_ds, sex='M', augmentation=augmentation)
-#     #     Age Groups
-#         test_aim_2(model, test_ds, age='0-20', augmentation=args.augment)
-#         test_aim_2(model, test_ds, age='20-40', augmentation=args.augment)
+#         test_aim_2(model, test_ds, sex='F', augmentation=args.augment)
+#         test_aim_2(model, test_ds, sex='M', augmentation=augmentation)
+    #     Age Groups
+        test_aim_2(model, test_ds, age='0-20', augmentation=args.augment)
+        test_aim_2(model, test_ds, age='20-40', augmentation=args.augment)
 #         test_aim_2(model, test_ds, age='40-60', augmentation=args.augment)
 #         test_aim_2(model, test_ds, age='60-80', augmentation=args.augment)
 #         test_aim_2(model, test_ds, age='80+', augmentation=args.augment)
