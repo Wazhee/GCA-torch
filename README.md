@@ -6,6 +6,15 @@ We explore how to construct unbiased Chest X-Ray datasets using StyleGAN!
 
 ## Chest X-Ray Interpolation using GCA
 <img width="1035" alt="Screenshot 2025-03-29 at 3 05 31 AM" src="https://github.com/user-attachments/assets/3839dcf0-6094-448e-916c-f7635a668ca7" />
+#### Aging
+![aging](https://github.com/user-attachments/assets/b41dc2a3-625b-4d8a-a1c6-586fdfe12705)
+![random_aging](https://github.com/user-attachments/assets/1e6b0e88-ae16-4b4b-b4dc-5bef4b130128)
+
+#### Rejuvenation
+![rejuvenation](https://github.com/user-attachments/assets/3e61dca3-19ab-4e69-8b5f-e8c1d89206c4)
+![random_rejuvenation](https://github.com/user-attachments/assets/3ddd7589-109b-4c93-9869-328afcec313f)
+
+
 <br />
 Our method effectively mitigates the effects of adversarial label poisoning attacks.
 <br />
