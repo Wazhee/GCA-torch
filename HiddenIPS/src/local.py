@@ -198,7 +198,7 @@ class GCA():
         alpha = (alpha_sex[:, None] * masks).sum(axis=0)
         return w + torch.from_numpy(alpha).float().unsqueeze(1).to(self.device) * self.sex_coeff
         
-    def augment_helper(self, embedding, sex, age, rate=0.8): # p = augmentation rate
+    def augment_helper(self, embedding, sex, age, rate=0.6): # p = augmentation rate
         np.random.seed(None); random.seed(None)
         if np.random.choice([True, False], p=[rate, 1-rate]): # random 80% chance of augmentation
 #             w_ = self.__sex__(embedding, sex)
