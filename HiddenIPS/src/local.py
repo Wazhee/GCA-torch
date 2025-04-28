@@ -191,10 +191,10 @@ class GCA():
         alpha = (alpha_age[:, None] * masks).sum(axis=0)
         return w + torch.from_numpy(alpha).float().unsqueeze(1).to(self.device) * self.age_coeff
     
-    def __sex__(self, w, sex, scale=1):
+    def __sex__(self, w, sex, scale=1.5): # 1.5 is the best @ 1.00 poisoning rate
         unique_vals = [0,1]
         masks = [(np.array(sex) == val).astype(int).tolist() for val in unique_vals]
-        alpha_sex = np.array([random.randint(1,4), random.randint(-4,-1)]) # more masculine 
+        alpha_sex = np.array([random.randint(1, 4*scale), random.randint(-4*scale,-1)]) # scale factor = aug strength
         alpha = (alpha_sex[:, None] * masks).sum(axis=0)
         return w + torch.from_numpy(alpha).float().unsqueeze(1).to(self.device) * self.sex_coeff
         
@@ -382,6 +382,10 @@ def __train_local(
         # Log results
         logs.append([epoch + 1, train_loss, train_auc, val_loss, val_auc])
         
+        # Save logs
+        if epoch % 10 == 0:
+            logs_df = pd.DataFrame(logs, columns=['epoch', 'train_loss', 'train_auc', 'val_loss', 'val_auc'])
+            logs_df.to_csv(os.path.join(ckpt_dir, f'{ckpt_name[:-4]}_logs.csv'), index=False)
     # Explicit cleanup
     del train_loader, val_loader
     torch.cuda.empty_cache()
