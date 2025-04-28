@@ -179,7 +179,7 @@ class GCA():
     def reconstruct(self, img):
         return self.__autoencoder__(img)
     
-    def __age__(self, w, age):
+    def __age__(self, w, age, scale=1):
         unique_vals = [0,1,2,3,4]
         masks = [(np.array(age) == val).astype(int).tolist() for val in unique_vals]
         alpha_age = np.array([random.randint(1, 8), # older
@@ -191,7 +191,7 @@ class GCA():
         alpha = (alpha_age[:, None] * masks).sum(axis=0)
         return w + torch.from_numpy(alpha).float().unsqueeze(1).to(self.device) * self.age_coeff
     
-    def __sex__(self, w, sex):
+    def __sex__(self, w, sex, scale=1):
         unique_vals = [0,1]
         masks = [(np.array(sex) == val).astype(int).tolist() for val in unique_vals]
         alpha_sex = np.array([random.randint(1,4), random.randint(-4,-1)]) # more masculine 
@@ -201,8 +201,8 @@ class GCA():
     def augment_helper(self, embedding, sex, age, rate=0.6): # p = augmentation rate
         np.random.seed(None); random.seed(None)
         if np.random.choice([True, False], p=[rate, 1-rate]): # random 80% chance of augmentation
-#             w_ = self.__sex__(embedding, sex)
-            w_ = self.__age__(embedding, age)
+#             w_ = self.__sex__(embedding, sex, scale=1.5)
+            w_ = self.__age__(embedding, age, scale=2.0)
             with torch.no_grad():
                 synth, _ = self.generator([w_], input_is_latent=True)  # <-- Generate image here
             return synth
